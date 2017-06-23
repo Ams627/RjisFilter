@@ -30,11 +30,6 @@ namespace RjisFilter
         public string SettingsFile { get; private set; }
         public static string ProductName { get; private set; }
 
-        /// <summary>
-        /// Produce SQLite output files or not:
-        /// </summary>
-        public bool Sqlite { get; set; } = true;
-        public bool SqliteAll { get; set; } = false;
         public SetOptions SetOption { get; set; }
 
         public List<string> SetsToProduce { get; set; }

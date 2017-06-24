@@ -10,7 +10,7 @@ using System.Xml;
 
 namespace RjisFilter
 {
-    class Settings
+    public class Settings
     {
         private static string settingsFile;
         public enum SetOptions
@@ -93,10 +93,11 @@ namespace RjisFilter
                 var settingsDoc = new XDocument(
                         new XDeclaration("1.0", "utf-8", "no"),
                         new XElement("Settings", new XAttribute("Version", version),
+                            new XElement("StationSets",
                             from stationSet in defaultStations select
-                            new XElement("StationSets", new XAttribute("Name", stationSet.Key),
-                            from station in stationSet.Value select
-                            new XElement("Station", new XAttribute("Nlc", station)))));
+                                new XElement("StationSet", new XAttribute("Name", stationSet.Key),
+                                from station in stationSet.Value select
+                                    new XElement("Station", new XAttribute("Nlc", station))))));
                 settingsDoc.Save(settingsFile);
 
             }

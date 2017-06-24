@@ -36,8 +36,8 @@ namespace RjisFilter
             }
 
             var settings = new Settings();
-
-            var window = new MainWindow();
+            new Idms(settings);
+            var window = new MainWindow(settings);
             window.Show();
         }
 

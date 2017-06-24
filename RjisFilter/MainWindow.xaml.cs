@@ -20,9 +20,28 @@ namespace RjisFilter
     /// </summary>
     public partial class MainWindow : Window
     {
-        public MainWindow()
+        private readonly Settings settings;
+        public MainWindow(Settings settings)
         {
+            this.settings = settings;
+            var viewmodel = new ViewModel(settings);
+            this.DataContext = viewmodel;
             InitializeComponent();
+        }
+
+        private void TextBlock_MouseDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.ClickCount == 2)
+            {
+                var window = new TocEditor();
+                window.DataContext = this.DataContext;
+                var vm = DataContext as ViewModel;
+                if (vm.ShowTocCommand != null && vm.ShowTocCommand.CanExecute(null))
+                {
+                    vm.ShowTocCommand.Execute(null);
+                }
+                window.ShowDialog();
+            }
         }
     }
 }

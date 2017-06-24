@@ -11,7 +11,7 @@
             <ListView Margin="0,10,0,10" ItemsSource="{Binding Tocs}">
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock Background="BlueViolet" MouseDown="TextBlock_MouseDown" HorizontalAlignment="Stretch">
+                        <TextBlock MouseDown="TextBlock_MouseDown" HorizontalAlignment="Stretch">
                             <TextBlock.Text>
                                 <Binding/>
                             </TextBlock.Text>

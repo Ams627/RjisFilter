@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,7 +9,7 @@ using System.Xml.Linq;
 
 namespace RjisFilter
 {
-    class Idms
+    public class Idms
     {
         class StationInfo
         {
@@ -60,32 +61,45 @@ namespace RjisFilter
                 ns = stationDoc.Root.GetDefaultNamespace();
 
                 nlcToStationName = (from station in stationDoc.Root.Elements(ns + "Station")
-                         where string.Equals(station.Element(ns + "UnattendedTIS").Value, "true", StringComparison.OrdinalIgnoreCase)
-                         where !station.Element(ns + "CRS").IsEmpty
-                         where !station.Element(ns + "Nlc").IsEmpty
-                         where !string.IsNullOrWhiteSpace(station.Element(ns + "Nlc").Value)
-                         group station by station.Element("Nlc").Value into g
-                         select new
-                         {
-                             Nlc = g.Key,
-                             SInfo = new StationInfo
-                             {
-                                 Name = (from member in g where member.Element("OJPEnabled").Value == "true" select member.Element("Name").Value).GroupBy(x=>x).Select(x=>x.First()).ToList(),
-                                 Crs = (from member in g where member.Element("OJPEnabled").Value == "true" select member.Element("CRS").Value).GroupBy(x => x).Select(x => x.First()).ToList(),
-                                 Tiploc = (from tip in g.Elements("Tiploc") select tip.Value).ToList().GroupBy(x => x).Select(x => x.First()).ToList()
-                             }
-                         }).Where(x=>x.SInfo.Crs.Count() > 0).OrderBy(x=>x.Nlc).ToDictionary(x => x.Nlc, x => x.SInfo);
+                                    where string.Equals(station.Element(ns + "UnattendedTIS").Value, "true", StringComparison.OrdinalIgnoreCase)
+                                    where !station.Element(ns + "CRS").IsEmpty
+                                    where !station.Element(ns + "Nlc").IsEmpty
+                                    where !string.IsNullOrWhiteSpace(station.Element(ns + "Nlc").Value)
+                                    group station by station.Element("Nlc").Value into g
+                                    select new
+                                    {
+                                        Nlc = g.Key,
+                                        SInfo = new StationInfo
+                                        {
+                                            Name = (from member in g where member.Element("OJPEnabled").Value == "true" select member.Element("Name").Value).GroupBy(x => x).Select(x => x.First()).ToList(),
+                                            Crs = (from member in g where member.Element("OJPEnabled").Value == "true" select member.Element("CRS").Value).GroupBy(x => x).Select(x => x.First()).ToList(),
+                                            Tiploc = (from tip in g.Elements("Tiploc") select tip.Value).ToList().GroupBy(x => x).Select(x => x.First()).ToList()
+                                        }
+                                    }).Where(x => x.SInfo.Crs.Count() > 0).OrderBy(x => x.Nlc).ToDictionary(x => x.Nlc, x => x.SInfo);
 
                 crsToNlc = (from entry in nlcToStationName
-                         from crs in entry.Value.Crs
-                         select new
-                         {
-                             crs,
-                             key = entry.Key
-                         }).ToDictionary(x => x.crs, x => x.key);
+                            from crs in entry.Value.Crs
+                            select new
+                            {
+                                crs,
+                                key = entry.Key
+                            }).ToDictionary(x => x.crs, x => x.key);
 
-            Console.WriteLine();
             }
+
         }
+        public string GetNameFromNlc(string nlc)
+        {
+            Debug.Assert(!string.IsNullOrWhiteSpace(nlc) && nlc.Length == 4);
+            var tryResult = nlcToStationName.TryGetValue(nlc, out var station);
+            var result = tryResult ? station.Name.First() : "STATION NAME NOT FOUND";
+            return result;
+        }
+
+        public List<string> GetAllStations()
+        {
+            return new List<string>(nlcToStationName.Keys);
+        }
+
     }
 }

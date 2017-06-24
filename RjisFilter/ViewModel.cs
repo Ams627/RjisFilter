@@ -11,17 +11,33 @@ namespace RjisFilter
 {
     class ViewModel
     {
+        public class Station
+        {
+            public string Nlc { get; set; }
+            public string Name { get; set; }
+        }
         private Settings settings;
+        private Idms idms;
         public ObservableCollection<string> Tocs { get; set; }
-        public ObservableCollection<string> TocNLCs { get; set; }
+        public ObservableCollection<Station> TocStations { get; set; }
 
-        public RelayCommand ShowTocCommand { get; set; }
+        public ObservableCollection<Station> AllStations { get; set; }
 
-        public ViewModel(Settings settings)
+        public RelayCommand<string> ShowTocCommand { get; set; }
+
+        public string CurrentToc { get; set; }
+
+        public ViewModel(Settings settings, Idms idms)
         {
             this.settings = settings;
+            this.idms = idms;
+            CurrentToc = settings.PerTocNlcList.First().Key;
             Tocs = new ObservableCollection<string>(settings.PerTocNlcList.Keys);
-            ShowTocCommand = new RelayCommand(() => { System.Diagnostics.Debug.WriteLine("Hello"); });
+            ShowTocCommand = new RelayCommand<string>((toc) => {
+                CurrentToc = toc;
+                TocStations = new ObservableCollection<Station>(settings.PerTocNlcList[toc].Select(x=>new Station { Nlc = x, Name = idms.GetNameFromNlc(x) }));
+                AllStations = new ObservableCollection<Station>(idms.GetAllStations().Select(x => new Station { Nlc = x, Name = idms.GetNameFromNlc(x) }));
+            });
         }
 
      //   ViewModel

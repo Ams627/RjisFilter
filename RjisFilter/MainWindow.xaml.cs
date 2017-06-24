@@ -21,10 +21,12 @@ namespace RjisFilter
     public partial class MainWindow : Window
     {
         private readonly Settings settings;
-        public MainWindow(Settings settings)
+        private readonly Idms idms;
+        public MainWindow(Settings settings, Idms idms)
         {
             this.settings = settings;
-            var viewmodel = new ViewModel(settings);
+            this.idms = idms;
+            var viewmodel = new ViewModel(settings, idms);
             this.DataContext = viewmodel;
             InitializeComponent();
         }
@@ -33,12 +35,13 @@ namespace RjisFilter
         {
             if (e.ClickCount == 2)
             {
+                var text = (sender as TextBlock).Text;
                 var window = new TocEditor();
                 window.DataContext = this.DataContext;
                 var vm = DataContext as ViewModel;
                 if (vm.ShowTocCommand != null && vm.ShowTocCommand.CanExecute(null))
                 {
-                    vm.ShowTocCommand.Execute(null);
+                    vm.ShowTocCommand.Execute(text);
                 }
                 window.ShowDialog();
             }

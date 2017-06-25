@@ -24,6 +24,9 @@ namespace RjisFilter
         {
             return settingsFile;
         }
+
+        private static string programFolder;
+
         /// <summary>
         /// Path for settings.xml - normally %appdata%/Parkeon/RcsConverter
         /// </summary>
@@ -58,7 +61,7 @@ namespace RjisFilter
             ProductName = productName;
 
             var appdataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            var programFolder = Path.Combine(appdataFolder, companyName, productName);
+            programFolder = Path.Combine(appdataFolder, companyName, productName);
             if (File.Exists(programFolder))
             {
                 throw new Exception($"File {programFolder} exists but this program requires that path as a folder. It must not be an existing file.");
@@ -190,7 +193,12 @@ namespace RjisFilter
             PerTocTicketTypeList = validStationSets.ToDictionary(
                 x => x.Attribute("Name").Value,
                 x => x.Descendants("TicketType").Where(e => e.Attribute("Code") != null).Select(e => e.Attribute("Code").Value).ToHashSet(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
-            Console.WriteLine("");
+
+            var (ok, logFolder) = GetFolder("log");
+            if (!ok)
+            {
+                logFolder = Path.Combine(programFolder, "log");
+            }
         }
 
         public (bool, string) GetFolder(string name)

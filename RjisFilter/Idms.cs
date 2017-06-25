@@ -96,6 +96,14 @@ namespace RjisFilter
             return result;
         }
 
+        public string GetCrsFromNlc(string nlc)
+        {
+            Debug.Assert(!string.IsNullOrWhiteSpace(nlc) && nlc.Length == 4);
+            var tryResult = nlcToStationName.TryGetValue(nlc, out var station);
+            var result = tryResult ? string.Join(", ", station.Crs) : "STATION CRS NOT FOUND";
+            return result;
+        }
+
         public List<string> GetAllStations()
         {
             return new List<string>(nlcToStationName.Keys);

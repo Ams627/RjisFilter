@@ -14,6 +14,7 @@ namespace RjisFilter
         public class Station
         {
             public string Nlc { get; set; }
+            public string Crs { get; set; }
             public string Name { get; set; }
         }
         private Settings settings;
@@ -35,8 +36,8 @@ namespace RjisFilter
             Tocs = new ObservableCollection<string>(settings.PerTocNlcList.Keys);
             ShowTocCommand = new RelayCommand<string>((toc) => {
                 CurrentToc = toc;
-                TocStations = new ObservableCollection<Station>(settings.PerTocNlcList[toc].Select(x=>new Station { Nlc = x, Name = idms.GetNameFromNlc(x) }));
-                AllStations = new ObservableCollection<Station>(idms.GetAllStations().Select(x => new Station { Nlc = x, Name = idms.GetNameFromNlc(x) }));
+                TocStations = new ObservableCollection<Station>(settings.PerTocNlcList[toc].Select(x=>new Station { Nlc = x, Crs = idms.GetCrsFromNlc(x), Name = idms.GetNameFromNlc(x) }));
+                AllStations = new ObservableCollection<Station>(idms.GetAllStations().Select(x => new Station { Nlc = x, Crs = idms.GetCrsFromNlc(x),  Name = idms.GetNameFromNlc(x) }));
             });
         }
 

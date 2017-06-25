@@ -9,31 +9,43 @@
         Name="TocWindow"
         >
     <Grid>
-        <StackPanel Height="{Binding ElementName=TocWindow, Path=ActualHeight}" Background="Pink">
-            <StackPanel Orientation="Horizontal">
-                <StackPanel>
-                    <TextBlock Text="All Stations" HorizontalAlignment="Center"/>
-                    <DataGrid AutoGenerateColumns="False" IsReadOnly="True" HorizontalAlignment="Left" MinHeight="100" MinColumnWidth="100" Width="400" Height="500" ItemsSource="{Binding AllStations}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="NLC" Binding="{Binding Nlc}" Width="1*" />
-                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="9*" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </StackPanel>
-                <StackPanel VerticalAlignment="Center">
-                    <Button Content="-&gt;"/>
-                    <Button Margin="0,20,0,0" Content="\&lt;-"/>
-                </StackPanel>
-                <StackPanel>
-                    <TextBlock Text="{Binding CurrentToc}"/>
-                    <DataGrid AutoGenerateColumns="False" HorizontalAlignment="Left" MinHeight="100" MinColumnWidth="100" Width="400" Height="500" ItemsSource="{Binding TocStations}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="NLC" Binding="{Binding Nlc}" Width="1*" />
-                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="9*" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <DockPanel Background="Beige">
+                <TextBlock DockPanel.Dock="Top" Text="All Stations" HorizontalAlignment="Center"/>
+                <DataGrid DockPanel.Dock="Bottom" AutoGenerateColumns="False" IsReadOnly="True" HorizontalAlignment="Left" MinHeight="100" MinColumnWidth="50" Width="400" ItemsSource="{Binding AllStations}" >
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="NLC" Binding="{Binding Nlc}" Width="2*" />
+                        <DataGridTextColumn Header="CRS" Binding="{Binding Crs}" Width="1*"/>
+                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="20*" />
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
+            <StackPanel VerticalAlignment="Center">
+                <Button Content="-&gt;"/>
+                <Button Margin="0,20,0,0" Content="&lt;-"/>
             </StackPanel>
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top" Text="{Binding CurrentToc}" HorizontalAlignment="Center"/>
+                <DataGrid DockPanel.Dock="Bottom" AutoGenerateColumns="False" HorizontalAlignment="Left" MinHeight="100" MinColumnWidth="100" Width="400" ItemsSource="{Binding TocStations}">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="NLC" Binding="{Binding Nlc}" Width="1*">
+                            <DataGridTextColumn.EditingElementStyle>
+                                <Style TargetType="{x:Type TextBox}">
+                                    <Setter Property="MaxLength" Value="4"/>
+                                </Style>
+                            </DataGridTextColumn.EditingElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn Header="CRS" Binding="{Binding Crs}" Width="1*">
+                            <DataGridTextColumn.EditingElementStyle>
+                                <Style TargetType="{x:Type TextBox}">
+                                    <Setter Property="MaxLength" Value="3"/>
+                                </Style>
+                            </DataGridTextColumn.EditingElementStyle>
+                        </DataGridTextColumn>
+                        <DataGridTextColumn IsReadOnly="True" Header="Name" Binding="{Binding Name}" Width="9*"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+            </DockPanel>
         </StackPanel>
     </Grid>
 </Window>

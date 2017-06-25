@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace RjisFilter
 {
@@ -23,6 +25,17 @@ namespace RjisFilter
             return new HashSet<T>(source, comparer);
         }
 
-
+        public static void RemoveStrings(this List<string> list, string s)
+        {
+            list.RemoveAll(x => string.Equals(x, s, StringComparison.OrdinalIgnoreCase));
+        }
+        public static void RemoveRegex(this List<string> list, string pattern)
+        {
+            list.RemoveAll(x => Regex.Match(x, pattern, RegexOptions.IgnoreCase).Success);
+        }
+        public static void KeepRegex(this List<string> list, string pattern)
+        {
+            list.RemoveAll(x => !Regex.Match(x, pattern, RegexOptions.IgnoreCase).Success);
+        }
     }
 }

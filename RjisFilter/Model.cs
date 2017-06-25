@@ -8,7 +8,7 @@ namespace RjisFilter
 {
     class Model
     {
-        private Settings settings;
+        //private Settings settings;
 
         public Model()
         {

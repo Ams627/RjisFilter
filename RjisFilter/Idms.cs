@@ -24,29 +24,55 @@ namespace RjisFilter
 
         private Dictionary<string, string> nlcToFarelocName;
         private Dictionary<string, StationInfo> nlcToStationName;
-        private Dictionary<string, string> crsToNlc;
+        //private Dictionary<string, string> crsToNlc;
+
+        private string idmsFolder = null;
 
 
         public List<string> Warnings { get; private set; }
 
         public bool IdmsAvailable { get; set; } = false;
-        public Idms(Settings settings)
+
+        public static async Task<Idms> CreateAsync(Settings settings)
+        {
+            var instance = new Idms(settings);
+            return instance.StartAsync();
+
+        }
+
+        private async Task<Idms> StartAsync()
+        {
+            await Task.Run(() => Console.WriteLine("Hello"));
+            //var (ok, idmsFolder) = settings.GetFolder("idms");
+            //if (ok)
+            //{
+            //    await Task.WhenAll(new List<Task> { ProcessFareLocations(), ProcessStations() });
+            //    crsToNlc = (from entry in nlcToStationName
+            //                from crs in entry.Value.Crs
+            //                select new
+            //                {
+            //                    crs,
+            //                    key = entry.Key
+            //                }).ToDictionary(x => x.crs, x => x.key);
+
+            //}
+            return this;
+        }
+
+        private Idms(Settings settings)
         {
             this.settings = settings;
-            var (ok, folder) = settings.GetFolder("idms");
-            if (ok)
-            {
-                var locFilename = Path.Combine(folder, IdmsFareLocationsName);
-                if (!File.Exists(locFilename))
-                {
-                    throw new Exception($"IDMS fare location file not found: {locFilename}");
-                }
-                var stationFilename = Path.Combine(folder, IdmsStationsFileName);
-                if (!File.Exists(stationFilename))
-                {
-                    throw new Exception($"IDMS station file not found: {stationFilename}");
-                }
+        }
 
+        private async Task ProcessFareLocations()
+        {
+            var locFilename = Path.Combine(idmsFolder, IdmsFareLocationsName);
+            if (!File.Exists(locFilename))
+            {
+                throw new Exception($"IDMS fare location file not found: {locFilename}");
+            }
+            await Task.Run(() =>
+            {
                 var fareDoc = XDocument.Load(locFilename, LoadOptions.SetLineInfo);
                 var ns = fareDoc.Root.GetDefaultNamespace();
                 nlcToFarelocName = (from location in fareDoc.Root.Elements(ns + "FareLocation")
@@ -56,9 +82,23 @@ namespace RjisFilter
                                         Nlc = location.Element(ns + "Nlc").Value,
                                         Name = location.Element(ns + "OJPDisplayName").Value,
                                     }).ToDictionary(x => x.Nlc, x => x.Name);
+            });
+        }
+
+        private async Task ProcessStations()
+        {
+            var stationFilename = Path.Combine(idmsFolder, IdmsStationsFileName);
+            if (!File.Exists(stationFilename))
+            {
+                throw new Exception($"IDMS station file not found: {stationFilename}");
+            }
+
+            await Task.Run(() =>
+            {
+
 
                 var stationDoc = XDocument.Load(stationFilename, LoadOptions.SetLineInfo);
-                ns = stationDoc.Root.GetDefaultNamespace();
+                var ns = stationDoc.Root.GetDefaultNamespace();
 
                 nlcToStationName = (from station in stationDoc.Root.Elements(ns + "Station")
                                     where string.Equals(station.Element(ns + "UnattendedTIS").Value, "true", StringComparison.OrdinalIgnoreCase)
@@ -76,18 +116,11 @@ namespace RjisFilter
                                             Tiploc = (from tip in g.Elements("Tiploc") select tip.Value).ToList().GroupBy(x => x).Select(x => x.First()).ToList()
                                         }
                                     }).Where(x => x.SInfo.Crs.Count() > 0).OrderBy(x => x.Nlc).ToDictionary(x => x.Nlc, x => x.SInfo);
-
-                crsToNlc = (from entry in nlcToStationName
-                            from crs in entry.Value.Crs
-                            select new
-                            {
-                                crs,
-                                key = entry.Key
-                            }).ToDictionary(x => x.crs, x => x.key);
-
-            }
+            });
 
         }
+
+
         public string GetNameFromNlc(string nlc)
         {
             Debug.Assert(!string.IsNullOrWhiteSpace(nlc) && nlc.Length == 4);

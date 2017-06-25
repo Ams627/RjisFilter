@@ -18,15 +18,38 @@ namespace RjisFilter
         Dictionary<string, List<string>> clusterToStationList;
         Dictionary<string, List<string>> stationToClusterList;
 
-        private static void AddEntry(Dictionary<string, List<string>> d, string key, string listEntry)
+        Dictionary<string, List<RJISStationInfo>> locationList;
+
+        private static void AddEntry<T, U>(Dictionary<T, List<U>> d, T key, U listEntry)
         {
             if (!d.TryGetValue(key, out var list))
             {
-                list = new List<string>();
+                list = new List<U>();
                 d.Add(key, list);
             }
             list.Add(listEntry);
         }
+
+
+        //private static void AddEntry(Dictionary<string, List<string>> d, string key, string listEntry)
+        //{
+        //    if (!d.TryGetValue(key, out var list))
+        //    {
+        //        list = new List<string>();
+        //        d.Add(key, list);
+        //    }
+        //    list.Add(listEntry);
+        //}
+
+        (bool, DateTime) GetRjisDate(string s)
+        {
+            bool result = DateTime.TryParseExact(s,
+                "ddMMyyyy",
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.None, out var date);
+            return (result, date);
+        }
+
 
         public RJIS(Settings settings)
         {
@@ -41,11 +64,11 @@ namespace RjisFilter
 
                 // remove zip files:
                 rjisNonZips.RemoveRegex(@"RJFAF\d{3}.zip$");
-                if (rjisNonZips.Count != 0)
+                if (rjisNonZips.Count == 0)
                 {
                     var rjisZips = Directory.GetFiles(folder, "RJFAF*.zip").ToList();
                     rjisZips.RemoveAll(s => !Regex.Match(s, @"RJFAF\d{3}.zip$", RegexOptions.IgnoreCase).Success);
-                    rjisZips.Sort((x1,x2) => GetRJISFilenameSerialNumber(x1).CompareTo(GetRJISFilenameSerialNumber(x2)));
+                    rjisZips.Sort((x1, x2) => GetRJISFilenameSerialNumber(x1).CompareTo(GetRJISFilenameSerialNumber(x2)));
                     if (rjisZips.Count > 0)
                     {
                         var latestRjisZip = rjisZips.Last();
@@ -76,7 +99,7 @@ namespace RjisFilter
                 }
                 else
                 {
-                    var serialNumber = GetRJISFilenameSerialNumber(rjisNonZips.OrderBy(x=>GetRJISFilenameSerialNumber(x)).Last());
+                    var serialNumber = GetRJISFilenameSerialNumber(rjisNonZips.OrderBy(x => GetRJISFilenameSerialNumber(x)).Last());
                     rjisLookup = rjisNonZips.ToLookup(x => Path.GetExtension(x).Substring(1), StringComparer.OrdinalIgnoreCase);
                 }
 
@@ -86,74 +109,101 @@ namespace RjisFilter
                     throw new Exception("More than one RJIS set in the RJIS folder.");
                 }
 
-                var rjisClusterFile = rjisLookup["FSC"].First();
+                ProcessClustersFile();
+                ProcessLocationFile();
+        }
+            }
 
-                if (!string.IsNullOrEmpty(rjisClusterFile))
+        private void ProcessClustersFile()
+        {
+            var rjisClusterFile = rjisLookup["FSC"].First();
+
+            if (!string.IsNullOrEmpty(rjisClusterFile))
+            {
+                clusterToStationList = new Dictionary<string, List<string>>();
+                stationToClusterList = new Dictionary<string, List<string>>();
+                using (var fileStream = File.OpenRead(rjisClusterFile))
+                using (var streamReader = new StreamReader(fileStream))
                 {
-                    clusterToStationList = new Dictionary<string, List<string>>();
-                    stationToClusterList = new Dictionary<string, List<string>>();
-                    using (var fileStream = File.OpenRead(rjisClusterFile))
-                    using (var streamReader = new StreamReader(fileStream))
+                    string line;
+                    while ((line = streamReader.ReadLine()) != null)
                     {
-                        string line;
-                        while ((line = streamReader.ReadLine()) != null)
+                        if (line.Length == 25 && line[0] != '/')
                         {
-                            if (line.Length == 25 && line[0] != '/')
+                            var clusterId = line.Substring(1, 4);
+                            var member = line.Substring(5, 4);
+                            AddEntry(clusterToStationList, clusterId, member);
+                            AddEntry(stationToClusterList, member, clusterId);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void ProcessLocationFile()
+        {
+            var rjisLocationFile = rjisLookup["LOC"].First();
+            if (!string.IsNullOrEmpty(rjisLocationFile))
+            {
+                locationList = new Dictionary<string, List<RJISStationInfo>>();
+                using (var fileStream = File.OpenRead(rjisLocationFile))
+                using (var streamReader = new StreamReader(fileStream))
+                {
+                    string line;
+                    while ((line = streamReader.ReadLine()) != null)
+                    {
+                        if (line.Length == 289 && line[0] != '/' && line[1] == 'L')
+                        {
+                            var nlc = line.Substring(36, 4);
+
+                            var (endOk, endDate) = GetRjisDate(line.Substring(9, 8));
+                            var (startOk, startDate) = GetRjisDate(line.Substring(17, 8));
+                            var (quoteOk, quoteDate) = GetRjisDate(line.Substring(25, 8));
+
+                            CheckDates(endOk, startOk, quoteOk, endDate, startDate, quoteDate);
+                            if (endDate.Date >= DateTime.Now.Date)
                             {
-                                var clusterId = line.Substring(1, 4);
-                                var member = line.Substring(5, 4);
-                                AddEntry(clusterToStationList, clusterId, member);
-                                AddEntry(stationToClusterList, member, clusterId);
+                                AddEntry(locationList, nlc, new RJISStationInfo
+                                {
+                                    AdminAreaCode = line.Substring(33, 2),
+                                    FareGroupNLC = line.Substring(69, 4),
+                                    CountyCode = line.Substring(75, 2),
+                                    ZoneNumber = line.Substring(79, 4),
+                                    ZoneIndicator = line.Substring(83, 1),
+                                    Region = line[85],
+                                    Hierarchy = line[86],
+                                    EndDate = endDate,
+                                    StartDate = startDate,
+                                    QuoteDate = quoteDate,
+                                });
                             }
                         }
                     }
                 }
+            }
 
-                var rjisLocationFile = rjisLookup["LOC"].First();
-                if (!string.IsNullOrEmpty(rjisLocationFile))
-                {
-                    using (var fileStream = File.OpenRead(rjisClusterFile))
-                    using (var streamReader = new StreamReader(fileStream))
-                    {
-                        string line;
-                        while ((line = streamReader.ReadLine()) != null)
-                        {
-                            if (line[1] == 'L')
-                            {
-                                Console.WriteLine();
-                            }
-                            if (line.Length == 289 && line[0] != '/' && line[1] == 'L')
-                            {
-                                var nlc = line.Substring(1, 4);
-                                if (!DateTime.TryParseExact(line.Substring(11, 8),
-                                    "ddMMyyyy",
-                                    System.Globalization.CultureInfo.InvariantCulture,
-                                    System.Globalization.DateTimeStyles.None, out var tempDateTime))
-                                {
-                                    throw new Exception("End date invalid in RJIS location file.");
-                                }
+            var poole = locationList["5883"];
+            var multi = locationList.Where(x => x.Value.Count() > 1);
+            Console.WriteLine();
+        }
 
-                                if (!DateTime.TryParseExact(line.Substring(19, 8),
-                                    "ddMMyyyy",
-                                    System.Globalization.CultureInfo.InvariantCulture,
-                                    System.Globalization.DateTimeStyles.None, out tempDateTime))
-                                {
-                                    throw new Exception("Start date invalid in RJIS location file.");
-                                }
-
-                                if (!DateTime.TryParseExact(line.Substring(27, 8),
-                                    "ddMMyyyy",
-                                    System.Globalization.CultureInfo.InvariantCulture,
-                                    System.Globalization.DateTimeStyles.None, out tempDateTime))
-                                {
-                                    throw new Exception("Quote date invalid in RJIS location file.");
-                                }
-                                Console.WriteLine("");
-                            }
-
-                        }
-                    }
-                }
+        private void CheckDates(bool endOk, bool startOk, bool quoteOk, DateTime endDate, DateTime startDate, DateTime quoteDate)
+        {
+            if (!endOk)
+            {
+                throw new Exception("End date invalid in RJIS location file.");
+            }
+            if (!startOk)
+            {
+                throw new Exception("End date invalid in RJIS location file.");
+            }
+            if (!quoteOk)
+            {
+                throw new Exception("End date invalid in RJIS location file.");
+            }
+            if (endDate.Date < startDate.Date)
+            {
+                throw new Exception("End date is before start date");
             }
         }
 

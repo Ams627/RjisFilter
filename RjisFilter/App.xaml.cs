@@ -13,6 +13,8 @@ namespace RjisFilter
 {
     public partial class App : Application
     {
+        private Settings settings;
+        private Idms idms;
         /// <summary>
         /// for ShowWindow win32 API function
         /// </summary>
@@ -35,11 +37,16 @@ namespace RjisFilter
                 Environment.Exit(0);
             }
 
-            var settings = new Settings();
-            var idms = new Idms(settings);
-            var rjis = new RJIS(settings);
+            settings = new Settings();
+            Init();
             var window = new MainWindow(settings, idms);
             window.Show();
+        }
+
+        private async void Init()
+        {
+            idms = await Idms.CreateAsync(settings);
+            var rjis = new RJIS(settings);
         }
 
         [DllImport("User32.dll")]

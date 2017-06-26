@@ -24,7 +24,7 @@ namespace RjisFilter
 
         private Dictionary<string, string> nlcToFarelocName;
         private Dictionary<string, StationInfo> nlcToStationName;
-        //private Dictionary<string, string> crsToNlc;
+        private Dictionary<string, string> crsToNlc;
 
         private string idmsFolder = null;
 
@@ -33,29 +33,27 @@ namespace RjisFilter
 
         public bool IdmsAvailable { get; set; } = false;
 
-        public static async Task<Idms> CreateAsync(Settings settings)
+        public static Task<Idms> CreateAsync(Settings settings)
         {
             var instance = new Idms(settings);
             return instance.StartAsync();
-
         }
 
         private async Task<Idms> StartAsync()
         {
-            await Task.Run(() => Console.WriteLine("Hello"));
-            //var (ok, idmsFolder) = settings.GetFolder("idms");
-            //if (ok)
-            //{
-            //    await Task.WhenAll(new List<Task> { ProcessFareLocations(), ProcessStations() });
-            //    crsToNlc = (from entry in nlcToStationName
-            //                from crs in entry.Value.Crs
-            //                select new
-            //                {
-            //                    crs,
-            //                    key = entry.Key
-            //                }).ToDictionary(x => x.crs, x => x.key);
+            var (ok, idmsFolder) = settings.GetFolder("idms");
+            if (ok)
+            {
+                await Task.WhenAll(new List<Task> { ProcessFareLocations(), ProcessStations() });
+                crsToNlc = (from entry in nlcToStationName
+                            from crs in entry.Value.Crs
+                            select new
+                            {
+                                crs,
+                                key = entry.Key
+                            }).ToDictionary(x => x.crs, x => x.key);
 
-            //}
+            }
             return this;
         }
 

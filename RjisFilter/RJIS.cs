@@ -111,8 +111,8 @@ namespace RjisFilter
 
                 ProcessClustersFile();
                 ProcessLocationFile();
-        }
             }
+        }
 
         private void ProcessClustersFile()
         {

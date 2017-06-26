@@ -42,8 +42,11 @@ namespace RjisFilter
         private async Task<Idms> StartAsync()
         {
             var (ok, idmsFolder) = settings.GetFolder("idms");
+            System.Diagnostics.Debug.WriteLine($"IDMS folder 0 {idmsFolder}");
+
             if (ok)
             {
+                this.idmsFolder = idmsFolder;
                 await Task.WhenAll(new List<Task> { ProcessFareLocations(), ProcessStations() });
                 crsToNlc = (from entry in nlcToStationName
                             from crs in entry.Value.Crs
@@ -59,11 +62,14 @@ namespace RjisFilter
 
         private Idms(Settings settings)
         {
+            System.Diagnostics.Debug.WriteLine("constructor");
             this.settings = settings;
         }
 
         private async Task ProcessFareLocations()
         {
+
+            System.Diagnostics.Debug.WriteLine($"IDMS folder {idmsFolder}");
             var locFilename = Path.Combine(idmsFolder, IdmsFareLocationsName);
             if (!File.Exists(locFilename))
             {
@@ -93,8 +99,6 @@ namespace RjisFilter
 
             await Task.Run(() =>
             {
-
-
                 var stationDoc = XDocument.Load(stationFilename, LoadOptions.SetLineInfo);
                 var ns = stationDoc.Root.GetDefaultNamespace();
 

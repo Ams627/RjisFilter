@@ -65,11 +65,17 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="DictUtils.cs" />
     <Compile Include="Idms.cs" />
     <Compile Include="LinqExtensions.cs" />
     <Compile Include="Model.cs" />
     <Compile Include="RJIS.cs" />
+    <Compile Include="RjisFlow.cs" />
+    <Compile Include="RJISFlowValue.cs" />
+    <Compile Include="RjisNDF.cs" />
     <Compile Include="RJISStationInfo.cs" />
+    <Compile Include="RJISTicketRecord.cs" />
+    <Compile Include="RjisUtils.cs" />
     <Compile Include="Settings.cs" />
     <Compile Include="StationInfo.xaml.cs">
       <DependentUpon>StationInfo.xaml</DependentUpon>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,19 +7,36 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.IO;
 using System.IO.Compression;
+using System.Runtime.CompilerServices;
+using System.Windows.Threading;
+using System.Windows;
 
 namespace RjisFilter
 {
-    partial class RJIS
+    public partial class RJIS : INotifyPropertyChanged
     {
-
         private readonly Settings settings;
         private ILookup<string, string> rjisLookup;
 
         Dictionary<string, List<string>> clusterToStationList;
         Dictionary<string, List<string>> stationToClusterList;
-
         Dictionary<string, List<RJISStationInfo>> locationList;
+        private Dictionary<string, List<RJISFlowValue>> flowDict;
+        private Dictionary<int, List<RJISTicketRecord>> ticketDict;
+        private Dictionary<string, List<RjisNDF>> ndfList;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private bool ready = false;
+        private int linesRead = 0;
+
+        public bool Ready { get => ready; set { ready = value; NotifyPropertyChanged(); } }
+        public int LinesRead { get => linesRead; set { linesRead = value; NotifyPropertyChanged(); } }
+
+        private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
 
         private static void AddEntry<T, U>(Dictionary<T, List<U>> d, T key, U listEntry)
         {
@@ -30,26 +48,15 @@ namespace RjisFilter
             list.Add(listEntry);
         }
 
-
-        //private static void AddEntry(Dictionary<string, List<string>> d, string key, string listEntry)
-        //{
-        //    if (!d.TryGetValue(key, out var list))
-        //    {
-        //        list = new List<string>();
-        //        d.Add(key, list);
-        //    }
-        //    list.Add(listEntry);
-        //}
-
-        (bool, DateTime) GetRjisDate(string s)
+        private void AddLine()
         {
-            bool result = DateTime.TryParseExact(s,
-                "ddMMyyyy",
-                System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.None, out var date);
-            return (result, date);
+            linesRead++;
+            if (linesRead % 10_000 == 0)
+            {
+                // cause a notification:
+                Application.Current.Dispatcher.Invoke(() => LinesRead = linesRead);
+            }
         }
-
 
         public RJIS(Settings settings)
         {
@@ -109,8 +116,19 @@ namespace RjisFilter
                     throw new Exception("More than one RJIS set in the RJIS folder.");
                 }
 
-                ProcessClustersFile();
-                ProcessLocationFile();
+                var tasklist = new List<Action> { ProcessClustersFile, ProcessLocationFile, ProcessFlowFile, ProcessNDFFile };
+                var tlist = tasklist.Select(t => Task.Run(t));
+
+                var start = DateTime.Now;
+                Task.WhenAll(tlist).ContinueWith((task) =>
+                {
+                    Application.Current.Dispatcher.Invoke(() => LinesRead = linesRead);
+                    Ready = true;
+                    var end = DateTime.Now;
+                    var result = (end - start).TotalSeconds;
+
+                    System.Diagnostics.Debug.WriteLine($"total seconds {result}");
+                });
             }
         }
 
@@ -135,6 +153,7 @@ namespace RjisFilter
                             AddEntry(clusterToStationList, clusterId, member);
                             AddEntry(stationToClusterList, member, clusterId);
                         }
+                        AddLine();
                     }
                 }
             }
@@ -156,9 +175,9 @@ namespace RjisFilter
                         {
                             var nlc = line.Substring(36, 4);
 
-                            var (endOk, endDate) = GetRjisDate(line.Substring(9, 8));
-                            var (startOk, startDate) = GetRjisDate(line.Substring(17, 8));
-                            var (quoteOk, quoteDate) = GetRjisDate(line.Substring(25, 8));
+                            var (endOk, endDate) = RjisUtils.GetRjisDate(line.Substring(9, 8));
+                            var (startOk, startDate) = RjisUtils.GetRjisDate(line.Substring(17, 8));
+                            var (quoteOk, quoteDate) = RjisUtils.GetRjisDate(line.Substring(25, 8));
 
                             CheckDates(endOk, startOk, quoteOk, endDate, startDate, quoteDate);
                             if (endDate.Date >= DateTime.Now.Date)
@@ -178,6 +197,7 @@ namespace RjisFilter
                                 });
                             }
                         }
+                        AddLine();
                     }
                 }
             }
@@ -186,6 +206,87 @@ namespace RjisFilter
             var multi = locationList.Where(x => x.Value.Count() > 1);
             Console.WriteLine();
         }
+
+
+        void ProcessFlowFile()
+        {
+            flowDict = new Dictionary<string, List<RJISFlowValue>>();
+            ticketDict = new Dictionary<int, List<RJISTicketRecord>>();
+
+            var rjisFlowFile = rjisLookup["FFL"].First();
+            using (var reader = new StreamReader(rjisFlowFile))
+            {
+                var linenumber = 0;
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (line.Substring(0, 2) == "RF")
+                    {
+                        var flow = new RjisFlow(line.Substring(2, 8));
+                        var flowValue = new RJISFlowValue(line);
+                        if (flowValue.EndDate.Date >= DateTime.Now.Date)
+                        {
+                            DictUtils.AddEntry(flowDict, flow.FlowKey, flowValue);
+                            if (line[19] == 'R')
+                            {
+                                DictUtils.AddEntry(flowDict, flow.GetReversedFlow().FlowKey, flowValue);
+                            }
+                        }
+                    }
+                    else if (line.Substring(0, 2) == "RT")
+                    {
+                        var key = Convert.ToInt32(line.Substring(2, 7));
+                        var ticketValue = new RJISTicketRecord(line);
+                        DictUtils.AddEntry(ticketDict, key, ticketValue);
+                    }
+                    AddLine();
+                }
+            }
+        }
+
+        void ProcessNDFFile()
+        {
+            var rjisFlowFile = rjisLookup["NFO"].First();
+            using (var reader = new StreamReader(rjisFlowFile))
+            {
+                ndfList = new Dictionary<string, List<RjisNDF>>();
+                var linenumber = 0;
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (line[0] == 'R')
+                    {
+                        var flow = new RjisFlow(line.Substring(1, 8));
+                        var (endOk, endDate) = RjisUtils.GetRjisDate(line.Substring(21, 8));
+                        var (startOk, startDate) = RjisUtils.GetRjisDate(line.Substring(29, 8));
+                        var (quoteOk, quoteDate) = RjisUtils.GetRjisDate(line.Substring(37, 8));
+                        CheckDates(endOk, startOk, quoteOk, endDate, startDate, quoteDate);
+
+                        var ndf = new RjisNDF
+                        {
+                            Route = line.Substring(9, 5),
+                            Railcard = line.Substring(14, 3),
+                            TicketCode = line.Substring(17, 3),
+                            EndDate = endDate,
+                            StartDate = startDate,
+                            QuoteDate = quoteDate,
+                            AdultFare = Convert.ToInt32(line.Substring(46, 8)),
+                            ChildFare = Convert.ToInt32(line.Substring(54, 8)),
+                            RestrictionCode = line.Substring(62, 2),
+                            CrossLondon = line[65],
+                            PrivateInd = line[66]
+                        };
+
+                        if (endDate.Date >= DateTime.Now.Date)
+                        {
+                            DictUtils.AddEntry(ndfList, flow.FlowKey, ndf);
+                        }
+                    }
+                    AddLine();
+                }
+            }
+        }
+
 
         private void CheckDates(bool endOk, bool startOk, bool quoteOk, DateTime endDate, DateTime startDate, DateTime quoteDate)
         {

@@ -38,16 +38,13 @@ namespace RjisFilter
             }
 
             settings = new Settings();
-            Init();
-            var window = new MainWindow(settings, idms);
+            var idms = new Idms(settings);
+            var rjis = new RJIS(settings);
+
+            var window = new MainWindow(settings, idms, rjis);
             window.Show();
         }
 
-        private async void Init()
-        {
-            idms = await Idms.CreateAsync(settings);
-            var rjis = new RJIS(settings);
-        }
 
         [DllImport("User32.dll")]
         private static extern bool SetForegroundWindow(IntPtr hWnd);

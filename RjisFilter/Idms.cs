@@ -28,45 +28,39 @@ namespace RjisFilter
 
         private string idmsFolder = null;
 
-
         public List<string> Warnings { get; private set; }
 
-        public bool IdmsAvailable { get; set; } = false;
+        public bool Ready { get; set; } = false;
 
-        public static Task<Idms> CreateAsync(Settings settings)
+        public Idms(Settings settings)
         {
-            var instance = new Idms(settings);
-            return instance.StartAsync();
-        }
-
-        private async Task<Idms> StartAsync()
-        {
+            this.settings = settings;
             var (ok, idmsFolder) = settings.GetFolder("idms");
             System.Diagnostics.Debug.WriteLine($"IDMS folder 0 {idmsFolder}");
 
             if (ok)
             {
                 this.idmsFolder = idmsFolder;
-                await Task.WhenAll(new List<Task> { ProcessFareLocations(), ProcessStations() });
-                crsToNlc = (from entry in nlcToStationName
-                            from crs in entry.Value.Crs
-                            select new
-                            {
-                                crs,
-                                key = entry.Key
-                            }).ToDictionary(x => x.crs, x => x.key);
+                var tasklist = new List<Action> { ProcessFareLocations, ProcessStations };
+                var tlist = tasklist.Select(t => Task.Run(t));
+
+                Task.WhenAll(tlist).ContinueWith((task) =>
+                {
+                    crsToNlc = (from entry in nlcToStationName
+                                from crs in entry.Value.Crs
+                                select new
+                                {
+                                    crs,
+                                    key = entry.Key
+                                }).ToDictionary(x => x.crs, x => x.key);
+                    Ready = true;
+
+                });
 
             }
-            return this;
         }
 
-        private Idms(Settings settings)
-        {
-            System.Diagnostics.Debug.WriteLine("constructor");
-            this.settings = settings;
-        }
-
-        private async Task ProcessFareLocations()
+        private void ProcessFareLocations()
         {
 
             System.Diagnostics.Debug.WriteLine($"IDMS folder {idmsFolder}");
@@ -75,21 +69,18 @@ namespace RjisFilter
             {
                 throw new Exception($"IDMS fare location file not found: {locFilename}");
             }
-            await Task.Run(() =>
-            {
-                var fareDoc = XDocument.Load(locFilename, LoadOptions.SetLineInfo);
-                var ns = fareDoc.Root.GetDefaultNamespace();
-                nlcToFarelocName = (from location in fareDoc.Root.Elements(ns + "FareLocation")
-                                    where string.Equals(location.Element(ns + "UnattendedTIS").Value, "true", StringComparison.OrdinalIgnoreCase)
-                                    select new
-                                    {
-                                        Nlc = location.Element(ns + "Nlc").Value,
-                                        Name = location.Element(ns + "OJPDisplayName").Value,
-                                    }).ToDictionary(x => x.Nlc, x => x.Name);
-            });
+            var fareDoc = XDocument.Load(locFilename, LoadOptions.SetLineInfo);
+            var ns = fareDoc.Root.GetDefaultNamespace();
+            nlcToFarelocName = (from location in fareDoc.Root.Elements(ns + "FareLocation")
+                                where string.Equals(location.Element(ns + "UnattendedTIS").Value, "true", StringComparison.OrdinalIgnoreCase)
+                                select new
+                                {
+                                    Nlc = location.Element(ns + "Nlc").Value,
+                                    Name = location.Element(ns + "OJPDisplayName").Value,
+                                }).ToDictionary(x => x.Nlc, x => x.Name);
         }
 
-        private async Task ProcessStations()
+        private void ProcessStations()
         {
             var stationFilename = Path.Combine(idmsFolder, IdmsStationsFileName);
             if (!File.Exists(stationFilename))
@@ -97,29 +88,25 @@ namespace RjisFilter
                 throw new Exception($"IDMS station file not found: {stationFilename}");
             }
 
-            await Task.Run(() =>
-            {
-                var stationDoc = XDocument.Load(stationFilename, LoadOptions.SetLineInfo);
-                var ns = stationDoc.Root.GetDefaultNamespace();
+            var stationDoc = XDocument.Load(stationFilename, LoadOptions.SetLineInfo);
+            var ns = stationDoc.Root.GetDefaultNamespace();
 
-                nlcToStationName = (from station in stationDoc.Root.Elements(ns + "Station")
-                                    where string.Equals(station.Element(ns + "UnattendedTIS").Value, "true", StringComparison.OrdinalIgnoreCase)
-                                    where !station.Element(ns + "CRS").IsEmpty
-                                    where !station.Element(ns + "Nlc").IsEmpty
-                                    where !string.IsNullOrWhiteSpace(station.Element(ns + "Nlc").Value)
-                                    group station by station.Element("Nlc").Value into g
-                                    select new
+            nlcToStationName = (from station in stationDoc.Root.Elements(ns + "Station")
+                                where string.Equals(station.Element(ns + "UnattendedTIS").Value, "true", StringComparison.OrdinalIgnoreCase)
+                                where !station.Element(ns + "CRS").IsEmpty
+                                where !station.Element(ns + "Nlc").IsEmpty
+                                where !string.IsNullOrWhiteSpace(station.Element(ns + "Nlc").Value)
+                                group station by station.Element("Nlc").Value into g
+                                select new
+                                {
+                                    Nlc = g.Key,
+                                    SInfo = new StationInfo
                                     {
-                                        Nlc = g.Key,
-                                        SInfo = new StationInfo
-                                        {
-                                            Name = (from member in g where member.Element("OJPEnabled").Value == "true" select member.Element("Name").Value).GroupBy(x => x).Select(x => x.First()).ToList(),
-                                            Crs = (from member in g where member.Element("OJPEnabled").Value == "true" select member.Element("CRS").Value).GroupBy(x => x).Select(x => x.First()).ToList(),
-                                            Tiploc = (from tip in g.Elements("Tiploc") select tip.Value).ToList().GroupBy(x => x).Select(x => x.First()).ToList()
-                                        }
-                                    }).Where(x => x.SInfo.Crs.Count() > 0).OrderBy(x => x.Nlc).ToDictionary(x => x.Nlc, x => x.SInfo);
-            });
-
+                                        Name = (from member in g where member.Element("OJPEnabled").Value == "true" select member.Element("Name").Value).GroupBy(x => x).Select(x => x.First()).ToList(),
+                                        Crs = (from member in g where member.Element("OJPEnabled").Value == "true" select member.Element("CRS").Value).GroupBy(x => x).Select(x => x.First()).ToList(),
+                                        Tiploc = (from tip in g.Elements("Tiploc") select tip.Value).ToList().GroupBy(x => x).Select(x => x.First()).ToList()
+                                    }
+                                }).Where(x => x.SInfo.Crs.Count() > 0).OrderBy(x => x.Nlc).ToDictionary(x => x.Nlc, x => x.SInfo);
         }
 
 

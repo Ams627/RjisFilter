@@ -2,7 +2,7 @@
 
 namespace RjisFilter
 {
-    partial class RJIS
+    public partial class RJIS
     {
         class RJISStationInfo
         {

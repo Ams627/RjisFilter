@@ -38,6 +38,10 @@
             <CheckBox Content="Remove out of date records" HorizontalAlignment="Left"/>
             <CheckBox Content="Remove unused clusters" HorizontalAlignment="Left"/>
             <Button Margin="0,10,0,0" HorizontalAlignment="Center" Content="Produced Filtered RJIS Set"/>
+            <TextBlock>
+                <Run Text="Lines read: "/>
+                <Run Text="{Binding LinesRead}"/>
+            </TextBlock>
         </StackPanel>
     </Grid>
 </Window>

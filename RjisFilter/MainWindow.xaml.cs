@@ -22,11 +22,13 @@ namespace RjisFilter
     {
         private readonly Settings settings;
         private readonly Idms idms;
-        public MainWindow(Settings settings, Idms idms)
+        private RJIS rjis;
+        public MainWindow(Settings settings, Idms idms, RJIS rjis)
         {
             this.settings = settings;
             this.idms = idms;
-            var viewmodel = new ViewModel(settings, idms);
+            this.rjis = rjis;
+            var viewmodel = new ViewModel(settings, idms, rjis);
             this.DataContext = viewmodel;
             InitializeComponent();
         }

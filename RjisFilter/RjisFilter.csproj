@@ -69,6 +69,7 @@
     <Compile Include="Idms.cs" />
     <Compile Include="LinqExtensions.cs" />
     <Compile Include="Model.cs" />
+    <Compile Include="OneStationDialogHelper.cs" />
     <Compile Include="RJIS.cs" />
     <Compile Include="RjisFlow.cs" />
     <Compile Include="RJISFlowValue.cs" />

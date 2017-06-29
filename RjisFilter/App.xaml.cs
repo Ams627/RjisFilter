@@ -14,7 +14,6 @@ namespace RjisFilter
     public partial class App : Application
     {
         private Settings settings;
-        private Idms idms;
         /// <summary>
         /// for ShowWindow win32 API function
         /// </summary>

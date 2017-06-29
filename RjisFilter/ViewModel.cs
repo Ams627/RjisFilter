@@ -47,7 +47,6 @@ namespace RjisFilter
         }
 
 
-
         public int LinesRead
         {
             get { return (int)GetValue(LinesReadProperty); }
@@ -62,7 +61,6 @@ namespace RjisFilter
 
         private void Rjis_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine("Changed");
             if (e.PropertyName == "LinesRead")
             {
                 LinesRead = rjis.LinesRead;

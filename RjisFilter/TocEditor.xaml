@@ -8,6 +8,9 @@
         Title="TocEditor" Height="600" Width="800"
         Name="TocWindow"
         >
+    <Window.Resources>
+        <local:OneStationDialogHelper x:Key="StationHelper" />
+    </Window.Resources>
     <Grid>
         <StackPanel Orientation="Horizontal">
             <DockPanel Background="Beige">
@@ -26,7 +29,7 @@
             </StackPanel>
             <DockPanel>
                 <TextBlock DockPanel.Dock="Top" Text="{Binding CurrentToc}" HorizontalAlignment="Center"/>
-                <DataGrid DockPanel.Dock="Bottom" AutoGenerateColumns="False" HorizontalAlignment="Left" MinHeight="100" MinColumnWidth="100" Width="400" ItemsSource="{Binding TocStations}">
+                <DataGrid x:Name="TocGrid" DockPanel.Dock="Bottom" AutoGenerateColumns="False" HorizontalAlignment="Left" MinHeight="100" MinColumnWidth="100" Width="400" ItemsSource="{Binding TocStations}">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="NLC" Binding="{Binding Nlc}" Width="1*">
                             <DataGridTextColumn.EditingElementStyle>
@@ -44,6 +47,13 @@
                         </DataGridTextColumn>
                         <DataGridTextColumn IsReadOnly="True" Header="Name" Binding="{Binding Name}" Width="9*"/>
                     </DataGrid.Columns>
+                    <DataGrid.InputBindings>
+                        <MouseBinding
+                            MouseAction="LeftDoubleClick"
+                            Command="{Binding OpenOneTocDialog, Source={StaticResource StationHelper}}"
+                            CommandParameter="{Binding SelectedItems, ElementName=TocGrid}"
+                            />
+                    </DataGrid.InputBindings>
                 </DataGrid>
             </DockPanel>
         </StackPanel>

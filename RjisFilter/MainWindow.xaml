@@ -6,21 +6,25 @@
         xmlns:local="clr-namespace:RjisFilter"
         mc:Ignorable="d"
         Title="RJIS Filter" Height="350" Width="525">
+    <Window.Resources>
+        <local:OneStationDialogHelper x:Key="StationHelper" />
+    </Window.Resources>
     <Grid>
         <StackPanel Margin="10,0,10,0">
             <ListView Margin="0,10,0,10" ItemsSource="{Binding Tocs}">
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock MouseDown="TextBlock_MouseDown" HorizontalAlignment="Stretch">
+                        <TextBlock HorizontalAlignment="Stretch">
                             <TextBlock.Text>
                                 <Binding/>
                             </TextBlock.Text>
-                            <!--<TextBlock.InputBindings>
-                                <MouseBinding Gesture="LeftDoubleClick"  Command="{Binding RelativeSource={
-                            RelativeSource FindAncestor, 
-                            AncestorType={x:Type Window}},
-                          Path=DataContext.ShowTocCommand}"/>
-                            </TextBlock.InputBindings>-->
+                            <TextBlock.InputBindings>
+                                <MouseBinding
+                                    Gesture="LeftDoubleClick"
+                                    Command="{Binding OpenOneTocDialog, Source={StaticResource StationHelper}}"
+                                    CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}"
+                                    />
+                            </TextBlock.InputBindings>
                         </TextBlock>
                     </DataTemplate>
                 </ListView.ItemTemplate>
@@ -40,7 +44,7 @@
             <Button Margin="0,10,0,0" HorizontalAlignment="Center" Content="Produced Filtered RJIS Set"/>
             <TextBlock>
                 <Run Text="Lines read: "/>
-                <Run Text="{Binding LinesRead}"/>
+                <Run Text="{Binding LinesRead, StringFormat={}{0:n0}}"/>
             </TextBlock>
         </StackPanel>
     </Grid>

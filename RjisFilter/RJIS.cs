@@ -120,14 +120,27 @@ namespace RjisFilter
                 var tlist = tasklist.Select(t => Task.Run(t));
 
                 var start = DateTime.Now;
-                Task.WhenAll(tlist).ContinueWith((task) =>
+                Task all = Task.WhenAll(tlist).ContinueWith((task) =>
                 {
-                    Application.Current.Dispatcher.Invoke(() => LinesRead = linesRead);
-                    Ready = true;
-                    var end = DateTime.Now;
-                    var result = (end - start).TotalSeconds;
+                    if (task.IsCanceled)
+                    {
+                        System.Diagnostics.Debug.WriteLine("Cancelled");
+                    }
+                    else if (task.IsFaulted)
+                    {
+                        var ex = task.Exception;
+                        System.Diagnostics.Debug.WriteLine($"Fault: exception is {ex.Message}");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("Task OK");
+                        Application.Current.Dispatcher.Invoke(() => LinesRead = linesRead);
+                        Ready = true;
+                        var end = DateTime.Now;
+                        var result = (end - start).TotalSeconds;
 
-                    System.Diagnostics.Debug.WriteLine($"total seconds {result}");
+                        System.Diagnostics.Debug.WriteLine($"total seconds {result}");
+                    }
                 });
             }
         }
@@ -239,6 +252,7 @@ namespace RjisFilter
                         var ticketValue = new RJISTicketRecord(line);
                         DictUtils.AddEntry(ticketDict, key, ticketValue);
                     }
+                    linenumber++;
                     AddLine();
                 }
             }
@@ -246,44 +260,54 @@ namespace RjisFilter
 
         void ProcessNDFFile()
         {
-            var rjisFlowFile = rjisLookup["NFO"].First();
-            using (var reader = new StreamReader(rjisFlowFile))
+            try
             {
-                ndfList = new Dictionary<string, List<RjisNDF>>();
-                var linenumber = 0;
-                string line;
-                while ((line = reader.ReadLine()) != null)
+                var rjisFlowFile = rjisLookup["NFO"].First();
+
+                using (var reader = new StreamReader(rjisFlowFile))
                 {
-                    if (line[0] == 'R')
+                    ndfList = new Dictionary<string, List<RjisNDF>>();
+                    var linenumber = 0;
+                    string line;
+                    while ((line = reader.ReadLine()) != null)
                     {
-                        var flow = new RjisFlow(line.Substring(1, 8));
-                        var (endOk, endDate) = RjisUtils.GetRjisDate(line.Substring(21, 8));
-                        var (startOk, startDate) = RjisUtils.GetRjisDate(line.Substring(29, 8));
-                        var (quoteOk, quoteDate) = RjisUtils.GetRjisDate(line.Substring(37, 8));
-                        CheckDates(endOk, startOk, quoteOk, endDate, startDate, quoteDate);
-
-                        var ndf = new RjisNDF
+                        if (line[0] == 'R')
                         {
-                            Route = line.Substring(9, 5),
-                            Railcard = line.Substring(14, 3),
-                            TicketCode = line.Substring(17, 3),
-                            EndDate = endDate,
-                            StartDate = startDate,
-                            QuoteDate = quoteDate,
-                            AdultFare = Convert.ToInt32(line.Substring(46, 8)),
-                            ChildFare = Convert.ToInt32(line.Substring(54, 8)),
-                            RestrictionCode = line.Substring(62, 2),
-                            CrossLondon = line[65],
-                            PrivateInd = line[66]
-                        };
+                            var flow = new RjisFlow(line.Substring(1, 8));
+                            var (endOk, endDate) = RjisUtils.GetRjisDate(line.Substring(21, 8));
+                            var (startOk, startDate) = RjisUtils.GetRjisDate(line.Substring(29, 8));
+                            var (quoteOk, quoteDate) = RjisUtils.GetRjisDate(line.Substring(37, 8));
+                            CheckDates(endOk, startOk, quoteOk, endDate, startDate, quoteDate);
 
-                        if (endDate.Date >= DateTime.Now.Date)
-                        {
-                            DictUtils.AddEntry(ndfList, flow.FlowKey, ndf);
+                            var ndf = new RjisNDF
+                            {
+                                Route = line.Substring(9, 5),
+                                Railcard = line.Substring(14, 3),
+                                TicketCode = line.Substring(17, 3),
+                                EndDate = endDate,
+                                StartDate = startDate,
+                                QuoteDate = quoteDate,
+                                AdultFare = Convert.ToInt32(line.Substring(46, 8)),
+                                ChildFare = Convert.ToInt32(line.Substring(54, 8)),
+                                RestrictionCode = line.Substring(62, 2),
+                                CrossLondon = line[65],
+                                PrivateInd = line[66]
+                            };
+
+                            if (endDate.Date >= DateTime.Now.Date)
+                            {
+                                DictUtils.AddEntry(ndfList, flow.FlowKey, ndf);
+                            }
                         }
+                        linenumber++;
+                        AddLine();
                     }
-                    AddLine();
                 }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Exception: {ex.Message}");
+                throw;
             }
         }
 

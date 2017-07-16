@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
@@ -81,6 +82,12 @@ namespace RjisFilter
                                 }).ToDictionary(x => x.Nlc, x => x.Name);
         }
 
+        class Station1
+        {
+            public string Nlc { get; set; }
+            public string Crs { get; set; }
+        }
+
         private void ProcessStations()
         {
             var stationFilename = Path.Combine(idmsFolder, IdmsStationsFileName);
@@ -92,30 +99,30 @@ namespace RjisFilter
             var stationDoc = XDocument.Load(stationFilename, LoadOptions.SetLineInfo);
             var ns = stationDoc.Root.GetDefaultNamespace();
 
-            nlcToStationName = (from station in stationDoc.Root.Elements(ns + "Station")
-                                where string.Equals(station.Element(ns + "UnattendedTIS").Value, "true", StringComparison.OrdinalIgnoreCase)
-                                where !station.Element(ns + "CRS").IsEmpty
-                                where !station.Element(ns + "Nlc").IsEmpty
-                                where !string.IsNullOrWhiteSpace(station.Element(ns + "Nlc").Value)
-                                group station by station.Element("Nlc").Value into g
-                                select new
-                                {
-                                    Nlc = g.Key,
-                                    SInfo = new StationInfo
-                                    {
-                                        Name = (from member in g where member.Element("OJPEnabled").Value == "true" select member.Element("Name").Value).GroupBy(x => x).Select(x => x.First()).ToList(),
-                                        Crs = (from member in g where member.Element("OJPEnabled").Value == "true" select member.Element("CRS").Value).GroupBy(x => x).Select(x => x.First()).ToList(),
-                                        Tiploc = (from tip in g.Elements("Tiploc") where !tip.IsEmpty select tip.Value).ToList().GroupBy(x => x).Select(x => x.First()).ToList()
-                                    }
-                                }).Where(x => x.SInfo.Crs.Any()).OrderBy(x => x.Nlc).ToDictionary(x => x.Nlc, x => x.SInfo);
+            var validStationElements = stationDoc.Root.Elements(ns + "Station")
+                                .Where(x => string.Equals(x.Element(ns + "UnattendedTIS").Value, "true", StringComparison.OrdinalIgnoreCase))
+                                .Where(x => !x.Element(ns + "CRS")?.IsEmpty ?? false)
+                                .Where(x => !x.Element(ns + "Nlc")?.IsEmpty ?? false)
+                                .Where(x => Regex.Match(x.Element(ns + "Nlc")?.Value, "^[0-9A-Z][0-9A-Z][0-9][0-9]$").Success);
+               ;
+
+            var nlcToCRSToTiploc = validStationElements.GroupBy(x=>x.Element("Nlc").Value)
+                .ToDictionary(x=>x.Key, x=>x.GroupBy(y=>y.Element("CRS").Value)
+                .ToDictionary(y=>y.Key, y=>y.Select(z=>z.Element("Tiploc")?.Value).ToList()));
+
+            var res1 = nlcToCRSToTiploc.TryGetValue("1279", out var result);
+
+            var tiplocToCRS2 = validStationElements.Where(x=>(x.Element("Tiploc")?.IsEmpty ?? true) == false)
+                .GroupBy(x=>x.Element("Tiploc").Value).ToDictionary(x=>x.Key, x=>x.Select(y=>y.Element("CRS").Value).First());
+
+
+            var crsToTipLocLookup = nlcToCRSToTiploc.SelectMany(x => x.Value, (element, res) => new { K = res.Key, V = res.Value }).ToLookup(x=>x.K, x=>x.V);
+            var crsToTipLoc = crsToTipLocLookup.ToDictionary(x => x.Key, x => x.Aggregate(Enumerable.Empty<string>(), (acc, list) => acc.Concat(list)).ToList());
+            
+
+            Console.WriteLine();
 
             var multiCRS = nlcToStationName.Where(x => x.Value.Crs.Count() > 1).ToList();
-            var stiplocToCrs = nlcToStationName.Values.Where(x=>x.Tiploc.Any()).SelectMany(x => x.Tiploc, (entry, element) =>
-            {
-                //Console.WriteLine($"entry: {entry} element: {element}");
-                return new { Tiploc = element, Crs = entry.Crs.First() };
-            }).ToLookup(x => x.Tiploc, x => x.Crs);
-            var t = stiplocToCrs.Where(x => x.Count() > 1);
         }
 
 

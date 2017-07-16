@@ -116,7 +116,7 @@ namespace RjisFilter
                     throw new Exception("More than one RJIS set in the RJIS folder.");
                 }
 
-                var tasklist = new List<Action> { ProcessClustersFile, ProcessLocationFile, ProcessFlowFile, ProcessNDFFile };
+                var tasklist = new List<Action> { }; // ProcessClustersFile, ProcessLocationFile, ProcessFlowFile, ProcessNDFFile };
                 var tlist = tasklist.Select(t => Task.Run(t));
 
                 var start = DateTime.Now;

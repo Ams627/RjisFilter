@@ -15,10 +15,11 @@ namespace RjisFilter
 
         public static OneStationDialogHelper Instance { get; private set; } = null;
 
-        public OneStationDialogHelper GetInstance()
-        {
-            if ()
-        }
+        //public static Create()
+        //public OneStationDialogHelper GetInstance()
+        //{
+        //    if ()
+        //}
 
         private OneStationDialogHelper()
         {

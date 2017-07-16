@@ -25,6 +25,7 @@ namespace RjisFilter
         private Dictionary<string, string> nlcToFarelocName;
         private Dictionary<string, StationInfo> nlcToStationName;
         private Dictionary<string, string> crsToNlc;
+        private Dictionary<string, string> tiplocToCrs;
 
         private string idmsFolder = null;
 
@@ -104,9 +105,17 @@ namespace RjisFilter
                                     {
                                         Name = (from member in g where member.Element("OJPEnabled").Value == "true" select member.Element("Name").Value).GroupBy(x => x).Select(x => x.First()).ToList(),
                                         Crs = (from member in g where member.Element("OJPEnabled").Value == "true" select member.Element("CRS").Value).GroupBy(x => x).Select(x => x.First()).ToList(),
-                                        Tiploc = (from tip in g.Elements("Tiploc") select tip.Value).ToList().GroupBy(x => x).Select(x => x.First()).ToList()
+                                        Tiploc = (from tip in g.Elements("Tiploc") where !tip.IsEmpty select tip.Value).ToList().GroupBy(x => x).Select(x => x.First()).ToList()
                                     }
-                                }).Where(x => x.SInfo.Crs.Count() > 0).OrderBy(x => x.Nlc).ToDictionary(x => x.Nlc, x => x.SInfo);
+                                }).Where(x => x.SInfo.Crs.Any()).OrderBy(x => x.Nlc).ToDictionary(x => x.Nlc, x => x.SInfo);
+
+            var multiCRS = nlcToStationName.Where(x => x.Value.Crs.Count() > 1).ToList();
+            var stiplocToCrs = nlcToStationName.Values.Where(x=>x.Tiploc.Any()).SelectMany(x => x.Tiploc, (entry, element) =>
+            {
+                //Console.WriteLine($"entry: {entry} element: {element}");
+                return new { Tiploc = element, Crs = entry.Crs.First() };
+            }).ToLookup(x => x.Tiploc, x => x.Crs);
+            var t = stiplocToCrs.Where(x => x.Count() > 1);
         }
 
 

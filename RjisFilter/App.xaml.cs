@@ -39,9 +39,15 @@ namespace RjisFilter
             settings = new Settings();
             var idms = new Idms(settings);
             var rjis = new RJIS(settings);
-
-            var window = new MainWindow(settings, idms, rjis);
-            window.Show();
+            try
+            {
+                var window = new MainWindow(settings, idms, rjis);
+                window.Show();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"{ex.ToString()}");
+            }
         }
 
 

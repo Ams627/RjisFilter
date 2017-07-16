@@ -82,12 +82,6 @@ namespace RjisFilter
                                 }).ToDictionary(x => x.Nlc, x => x.Name);
         }
 
-        class Station1
-        {
-            public string Nlc { get; set; }
-            public string Crs { get; set; }
-        }
-
         private void ProcessStations()
         {
             var stationFilename = Path.Combine(idmsFolder, IdmsStationsFileName);
@@ -106,16 +100,17 @@ namespace RjisFilter
                                 .Where(x => Regex.Match(x.Element(ns + "Nlc")?.Value, "^[0-9A-Z][0-9A-Z][0-9][0-9]$").Success);
                ;
 
+            // an NLC can have several CRS codes - we produce a dictionary mapping an NLC to an "inner" dictionary.
+            // the inner dictionary maps CRS to Tiplocs.
             var nlcToCRSToTiploc = validStationElements.GroupBy(x=>x.Element("Nlc").Value)
                 .ToDictionary(x=>x.Key, x=>x.GroupBy(y=>y.Element("CRS").Value)
                 .ToDictionary(y=>y.Key, y=>y.Select(z=>z.Element("Tiploc")?.Value).ToList()));
 
-            var res1 = nlcToCRSToTiploc.TryGetValue("1279", out var result);
-
+            // a dictionary mapping tiploc codes to CRS codes:
             var tiplocToCRS2 = validStationElements.Where(x=>(x.Element("Tiploc")?.IsEmpty ?? true) == false)
                 .GroupBy(x=>x.Element("Tiploc").Value).ToDictionary(x=>x.Key, x=>x.Select(y=>y.Element("CRS").Value).First());
 
-
+            // a dictionary mapping CRS to a list of Tiplocs - we must aggregate lists from all occurences of CRS codes
             var crsToTipLocLookup = nlcToCRSToTiploc.SelectMany(x => x.Value, (element, res) => new { K = res.Key, V = res.Value }).ToLookup(x=>x.K, x=>x.V);
             var crsToTipLoc = crsToTipLocLookup.ToDictionary(x => x.Key, x => x.Aggregate(Enumerable.Empty<string>(), (acc, list) => acc.Concat(list)).ToList());
             

@@ -33,7 +33,7 @@ namespace RjisFilter
             //});
 
             ShowTocCommand = new RelayCommand<string>((toc) => {
-                tocDialog.ShowDialog(toc);
+                tocDialog.ShowDialog(model, toc);
             });
 
             model.Rjis.PropertyChanged += Rjis_PropertyChanged;

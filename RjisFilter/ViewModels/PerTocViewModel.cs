@@ -29,7 +29,7 @@ namespace RjisFilter.ViewModels
         public PerTocViewModel(Model model, object param)
         {
             this.model = model;
-            Toc = Parameter as string;
+            Toc = param as string;
             TocStations = new ObservableCollection<Station>(model.Settings.PerTocNlcList[Toc].Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
             AllStations = new ObservableCollection<Station>(model.Idms.GetAllStations().Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
         }

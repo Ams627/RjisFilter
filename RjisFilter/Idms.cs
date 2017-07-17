@@ -100,6 +100,7 @@ namespace RjisFilter
                                 .Where(x => string.Equals(x.Element(ns + "UnattendedTIS").Value, "true", StringComparison.OrdinalIgnoreCase))
                                 .Where(x => !x.Element(ns + "CRS")?.IsEmpty ?? false)
                                 .Where(x => !x.Element(ns + "Nlc")?.IsEmpty ?? false)
+                                .Where(x => (x.Element(ns + "OJPEnabled")?.Value ?? "") == "true")
                                 .Where(x => Regex.Match(x.Element(ns + "Nlc")?.Value, "^[0-9A-Z][0-9A-Z][0-9][0-9]$").Success);
                ;
 

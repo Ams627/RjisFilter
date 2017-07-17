@@ -16,11 +16,11 @@
                                 <Binding/>
                             </TextBlock.Text>
                             <TextBlock.InputBindings>
-                                <!--<MouseBinding
+                                <MouseBinding
                                     Gesture="LeftDoubleClick"
-                                    Command="{Binding OpenOneTocDialog, Source={StaticResource StationHelper}}"
-                                    CommandParameter="{Binding SelectedItems, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}"
-                                    />-->
+                                    Command="{Binding DataContext.ShowTocCommand, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}"
+                                    CommandParameter="{Binding .}"
+                                    />
                             </TextBlock.InputBindings>
                         </TextBlock>
                     </DataTemplate>

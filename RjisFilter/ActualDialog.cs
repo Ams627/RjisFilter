@@ -1,22 +1,26 @@
-﻿using System.Windows;
+﻿using System;
+using System.Windows;
 
 namespace RjisFilter
 {
-    class ActualDialog<T> : IDialogService where T : Window, new()
+    class ActualDialog<W, VM> : IDialogService where W : Window, new() where VM : ViewModels.ViewModelBase
     {
-        object datacontext;
-        public ActualDialog(object datacontext)
+        Func<object, object, VM> generator;
+        public ActualDialog(Func<object, object, VM> generator)
         {
-            this.datacontext = datacontext;
+            this.generator = generator;
         }
 
-        public void ShowDialog()
+        public void ShowDialog(object model, object parameter)
         {
-            var window = new T()
+            var vm = generator(model, parameter);
+            var window = new W()
             {
-                DataContext = datacontext
+                DataContext = vm,
             };
             window.ShowDialog();
         }
+
+        
     }
 }

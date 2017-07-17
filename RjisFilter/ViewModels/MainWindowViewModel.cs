@@ -11,20 +11,10 @@ namespace RjisFilter
 {
     public class MainWindowViewModel : DependencyObject
     {
-        public class Station
-        {
-            public string Nlc { get; set; }
-            public string Crs { get; set; }
-            public string Name { get; set; }
-        }
-
         private readonly Model model;
         private readonly IDialogService tocDialog;
 
         public ObservableCollection<string> Tocs { get; set; }
-        public ObservableCollection<Station> TocStations { get; set; }
-
-        public ObservableCollection<Station> AllStations { get; set; }
 
         public RelayCommand<string> ShowTocCommand { get; set; }
 
@@ -36,14 +26,14 @@ namespace RjisFilter
             this.tocDialog = tocDialog;
             CurrentToc = model.Settings.PerTocNlcList.First().Key;
             Tocs = new ObservableCollection<string>(model.Settings.PerTocNlcList.Keys);
-            ShowTocCommand = new RelayCommand<string>((toc) => {
-                CurrentToc = toc;
-                TocStations = new ObservableCollection<Station>(model.Settings.PerTocNlcList[toc].Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
-                AllStations = new ObservableCollection<Station>(model.Idms.GetAllStations().Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
-            });
+            //ShowTocCommand = new RelayCommand<string>((toc) => {
+            //    CurrentToc = toc;
+            //    TocStations = new ObservableCollection<Station>(model.Settings.PerTocNlcList[toc].Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
+            //    AllStations = new ObservableCollection<Station>(model.Idms.GetAllStations().Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
+            //});
 
             ShowTocCommand = new RelayCommand<string>((toc) => {
-                tocDialog.ShowDialog();
+                tocDialog.ShowDialog(toc);
             });
 
             model.Rjis.PropertyChanged += Rjis_PropertyChanged;
@@ -70,7 +60,5 @@ namespace RjisFilter
                 LinesRead = model.Rjis.LinesRead;
             }
         }
-
-        //   ViewModel
     }
 }

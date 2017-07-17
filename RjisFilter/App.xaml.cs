@@ -44,8 +44,7 @@ namespace RjisFilter
             {
                 var model = new Model(settings, rjis, idms, new Timetable(), new RouteingGuide());
 
-                var perTocViewModel = new PerTocViewModel(model);
-                var tocdialog = new ActualDialog<TocEditor>(perTocViewModel);
+                var tocdialog = new ActualDialog<TocEditor, PerTocViewModel>((a,b)=>new PerTocViewModel(a, b));
                 var mainWindowViewModel = new MainWindowViewModel(model, tocdialog);
                 var window = new MainWindow(mainWindowViewModel);
                 window.Show();

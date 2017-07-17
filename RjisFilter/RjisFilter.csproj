@@ -93,6 +93,7 @@
     </Compile>
     <Compile Include="ViewModels\PerTocViewModel.cs" />
     <Compile Include="ViewModels\StationInfoViewModel.cs" />
+    <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="Windows\TocEditor.xaml.cs">
       <DependentUpon>TocEditor.xaml</DependentUpon>
     </Compile>

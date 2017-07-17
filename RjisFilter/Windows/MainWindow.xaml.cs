@@ -28,18 +28,18 @@ namespace RjisFilter
 
         private void TextBlock_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.ClickCount == 2)
-            {
-                var text = (sender as TextBlock).Text;
-                var window = new TocEditor();
-                window.DataContext = this.DataContext;
-                var vm = DataContext as MainWindowViewModel;
-                if (vm.ShowTocCommand != null && vm.ShowTocCommand.CanExecute(null))
-                {
-                    vm.ShowTocCommand.Execute(text);
-                }
-                window.ShowDialog();
-            }
+            //if (e.ClickCount == 2)
+            //{
+            //    var text = (sender as TextBlock).Text;
+            //    var window = new TocEditor();
+            //    window.DataContext = this.DataContext;
+            //    var vm = DataContext as MainWindowViewModel;
+            //    if (vm.ShowTocCommand != null && vm.ShowTocCommand.CanExecute(null))
+            //    {
+            //        vm.ShowTocCommand.Execute(text);
+            //    }
+            //    window.ShowDialog();
+            //}
         }
     }
 }

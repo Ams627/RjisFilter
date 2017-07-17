@@ -2,6 +2,6 @@
 {
     public interface IDialogService
     {
-        void ShowDialog();
+        void ShowDialog(object Model, object parameter);
     }
 }

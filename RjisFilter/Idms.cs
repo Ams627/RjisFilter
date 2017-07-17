@@ -24,8 +24,10 @@ namespace RjisFilter
         private Settings settings;
 
         private Dictionary<string, string> nlcToFarelocName;
-        private Dictionary<string, StationInfo> nlcToStationName;
+        private Dictionary<string, string> nlcToStationName;
         private Dictionary<string, string> crsToNlc;
+        private Dictionary<string, Dictionary<string, List<string>>> nlcToCrsToTiploc;
+
         private Dictionary<string, string> tiplocToCrs;
 
         private string idmsFolder = null;
@@ -48,13 +50,14 @@ namespace RjisFilter
 
                 Task.WhenAll(tlist).ContinueWith((task) =>
                 {
-                    crsToNlc = (from entry in nlcToStationName
-                                from crs in entry.Value.Crs
+                    var acrsToNlc = (from entry in nlcToCrsToTiploc
+                                from crs in entry.Value.Keys
                                 select new
                                 {
                                     crs,
                                     key = entry.Key
-                                }).ToDictionary(x => x.crs, x => x.key);
+                                }).ToLookup(x => x.crs);
+                    var b = acrsToNlc.Where(x => x.Count() > 1);
                     Ready = true;
 
                 });
@@ -102,7 +105,7 @@ namespace RjisFilter
 
             // an NLC can have several CRS codes - we produce a dictionary mapping an NLC to an "inner" dictionary.
             // the inner dictionary maps CRS to Tiplocs.
-            var nlcToCRSToTiploc = validStationElements.GroupBy(x=>x.Element("Nlc").Value)
+            nlcToCrsToTiploc = validStationElements.GroupBy(x=>x.Element("Nlc").Value)
                 .ToDictionary(x=>x.Key, x=>x.GroupBy(y=>y.Element("CRS").Value)
                 .ToDictionary(y=>y.Key, y=>y.Select(z=>z.Element("Tiploc")?.Value).ToList()));
 
@@ -111,11 +114,40 @@ namespace RjisFilter
                 .GroupBy(x=>x.Element("Tiploc").Value).ToDictionary(x=>x.Key, x=>x.Select(y=>y.Element("CRS").Value).First());
 
             // a dictionary mapping CRS to a list of Tiplocs - we must aggregate lists from all occurences of CRS codes
-            var crsToTipLocLookup = nlcToCRSToTiploc.SelectMany(x => x.Value, (element, res) => new { K = res.Key, V = res.Value }).ToLookup(x=>x.K, x=>x.V);
+            var crsToTipLocLookup = nlcToCrsToTiploc.SelectMany(x => x.Value, (element, res) => new { K = res.Key, V = res.Value }).ToLookup(x=>x.K, x=>x.V);
             var crsToTipLoc = crsToTipLocLookup.ToDictionary(x => x.Key, x => x.Aggregate(Enumerable.Empty<string>(), (acc, list) => acc.Concat(list)).ToList());
-            
 
-            Console.WriteLine();
+
+
+
+            //nlcToStationName = (from station in stationDoc.Root.Elements(ns + "Station")
+            //                    where string.Equals(station.Element(ns + "UnattendedTIS").Value, "true", StringComparison.OrdinalIgnoreCase)
+            //                    where !station.Element(ns + "CRS").IsEmpty
+            //                    where !station.Element(ns + "Nlc").IsEmpty
+            //                    where !string.IsNullOrWhiteSpace(station.Element(ns + "Nlc").Value)
+            //                    group station by station.Element("Nlc").Value into g
+            //                    select new
+            //                    {
+            //                        Nlc = g.Key,
+            //                        SInfo = new StationInfo
+            //                        {
+            //                            Name = (from member in g where member.Element("OJPEnabled").Value == "true" select member.Element("Name").Value).GroupBy(x => x).Select(x => x.First()).ToList(),
+            //                            Crs = (from member in g where member.Element("OJPEnabled").Value == "true" select member.Element("CRS").Value).GroupBy(x => x).Select(x => x.First()).ToList(),
+            //                            Tiploc = (from tip in g.Elements("Tiploc") where !tip.IsEmpty select tip.Value).ToList().GroupBy(x => x).Select(x => x.First()).ToList()
+            //                        }
+            //                    }).Where(x => x.SInfo.Crs.Any()).OrderBy(x => x.Nlc).ToDictionary(x => x.Nlc, x => x.SInfo);
+
+            //var multiCRS = nlcToStationName.Where(x => x.Value.Crs.Count() > 1).ToList();
+
+
+
+            nlcToStationName = validStationElements.GroupBy(x => x.Element("Nlc").Value)
+                .ToDictionary(x => x.Key, x => x.Elements("Name").First().Value);
+
+
+
+
+Console.WriteLine();
 
             //var multiCRS = nlcToStationName.Where(x => x.Value.Crs.Count() > 1).ToList();
         }
@@ -125,15 +157,15 @@ namespace RjisFilter
         {
             Debug.Assert(!string.IsNullOrWhiteSpace(nlc) && nlc.Length == 4);
             var tryResult = nlcToStationName.TryGetValue(nlc, out var station);
-            var result = tryResult ? station.Name.First() : "STATION NAME NOT FOUND";
+            var result = station != null ? station : "STATION NAME NOT FOUND";
             return result;
         }
 
         public string GetCrsFromNlc(string nlc)
         {
             Debug.Assert(!string.IsNullOrWhiteSpace(nlc) && nlc.Length == 4);
-            var tryResult = nlcToStationName.TryGetValue(nlc, out var station);
-            var result = tryResult ? string.Join(", ", station.Crs) : "STATION CRS NOT FOUND";
+            var tryResult = nlcToCrsToTiploc.TryGetValue(nlc, out var crsToTiploc);
+            var result = tryResult ? string.Join(", ", crsToTiploc.Keys) : "STATION CRS NOT FOUND";
             return result;
         }
 

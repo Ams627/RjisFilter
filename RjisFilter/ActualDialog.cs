@@ -12,8 +12,10 @@ namespace RjisFilter
 
         public void ShowDialog()
         {
-            var window = new T();
-            window.DataContext = datacontext;
+            var window = new T()
+            {
+                DataContext = datacontext
+            };
             window.ShowDialog();
         }
     }

@@ -9,7 +9,7 @@ using System.Windows;
 
 namespace RjisFilter
 {
-    class MainWindowViewModel : DependencyObject
+    public class MainWindowViewModel : DependencyObject
     {
         public class Station
         {
@@ -17,9 +17,10 @@ namespace RjisFilter
             public string Crs { get; set; }
             public string Name { get; set; }
         }
-        private Settings settings;
-        private Idms idms;
-        private RJIS rjis;
+
+        private readonly Model model;
+        private readonly IDialogService tocDialog;
+
         public ObservableCollection<string> Tocs { get; set; }
         public ObservableCollection<Station> TocStations { get; set; }
 
@@ -29,20 +30,23 @@ namespace RjisFilter
 
         public string CurrentToc { get; set; }
 
-        public MainWindowViewModel(Settings settings, Idms idms, RJIS rjis)
+        public MainWindowViewModel(Model model, IDialogService tocDialog)
         {
-            this.settings = settings;
-            this.idms = idms;
-            this.rjis = rjis;
-            CurrentToc = settings.PerTocNlcList.First().Key;
-            Tocs = new ObservableCollection<string>(settings.PerTocNlcList.Keys);
+            this.model = model;
+            this.tocDialog = tocDialog;
+            CurrentToc = model.Settings.PerTocNlcList.First().Key;
+            Tocs = new ObservableCollection<string>(model.Settings.PerTocNlcList.Keys);
             ShowTocCommand = new RelayCommand<string>((toc) => {
                 CurrentToc = toc;
-                TocStations = new ObservableCollection<Station>(settings.PerTocNlcList[toc].Select(x => new Station { Nlc = x, Crs = idms.GetCrsFromNlc(x), Name = idms.GetNameFromNlc(x) }));
-                AllStations = new ObservableCollection<Station>(idms.GetAllStations().Select(x => new Station { Nlc = x, Crs = idms.GetCrsFromNlc(x), Name = idms.GetNameFromNlc(x) }));
+                TocStations = new ObservableCollection<Station>(model.Settings.PerTocNlcList[toc].Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
+                AllStations = new ObservableCollection<Station>(model.Idms.GetAllStations().Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
             });
 
-            rjis.PropertyChanged += Rjis_PropertyChanged;
+            ShowTocCommand = new RelayCommand<string>((toc) => {
+                tocDialog.ShowDialog();
+            });
+
+            model.Rjis.PropertyChanged += Rjis_PropertyChanged;
 
         }
 
@@ -63,7 +67,7 @@ namespace RjisFilter
         {
             if (e.PropertyName == "LinesRead")
             {
-                LinesRead = rjis.LinesRead;
+                LinesRead = model.Rjis.LinesRead;
             }
         }
 

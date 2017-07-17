@@ -6,13 +6,21 @@ using System.Threading.Tasks;
 
 namespace RjisFilter
 {
-    class Model
+    public class Model
     {
-        //private Settings settings;
+        public Settings Settings { get; private set; }
+        public RJIS Rjis { get; private set; }
+        public Idms Idms { get; private set; }
+        public Timetable Timetable { get; private set; }
+        public RouteingGuide RouteingGuide { get; set; }
 
-        public Model()
+        public Model(Settings settings, RJIS rjis, Idms idms, Timetable timetable, RouteingGuide routeingGuide)
         {
-
+            Settings = settings;
+            Rjis = rjis;
+            Idms = idms;
+            Timetable = timetable;
+            RouteingGuide = routeingGuide;
         }
     }
 }

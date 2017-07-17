@@ -20,18 +20,9 @@ namespace RjisFilter
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly Settings settings;
-        private readonly Idms idms;
-        private RJIS rjis;
-        public MainWindow(Settings settings, Idms idms, RJIS rjis)
+        public MainWindow(MainWindowViewModel vm)
         {
-            this.settings = settings;
-            this.idms = idms;
-            this.rjis = rjis;
-            var oneStationViewModel = new OneStationViewModel();
-            var dialog = new ActualDialog<OneStationDialog>(oneStationViewModel);
-            var viewmodel = new MainWindowViewModel(settings, idms, rjis);
-            this.DataContext = viewmodel;
+            this.DataContext = vm;
             InitializeComponent();
         }
 

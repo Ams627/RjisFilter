@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using RjisFilter.ViewModels;
 
 namespace RjisFilter
 {
@@ -41,7 +42,12 @@ namespace RjisFilter
             var rjis = new RJIS(settings);
             try
             {
-                var window = new MainWindow(settings, idms, rjis);
+                var model = new Model(settings, rjis, idms, new Timetable(), new RouteingGuide());
+
+                var perTocViewModel = new PerTocViewModel(model);
+                var tocdialog = new ActualDialog<TocEditor>(perTocViewModel);
+                var mainWindowViewModel = new MainWindowViewModel(model, tocdialog);
+                var window = new MainWindow(mainWindowViewModel);
                 window.Show();
             }
             catch (Exception ex)

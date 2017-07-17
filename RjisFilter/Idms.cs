@@ -117,7 +117,7 @@ namespace RjisFilter
 
             Console.WriteLine();
 
-            var multiCRS = nlcToStationName.Where(x => x.Value.Crs.Count() > 1).ToList();
+            //var multiCRS = nlcToStationName.Where(x => x.Value.Crs.Count() > 1).ToList();
         }
 
 

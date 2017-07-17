@@ -71,6 +71,8 @@
     <Compile Include="IDialogService.cs" />
     <Compile Include="Idms.cs" />
     <Compile Include="LinqExtensions.cs" />
+    <Compile Include="RouteingGuide.cs" />
+    <Compile Include="Timetable.cs" />
     <Compile Include="ViewModels\MainWindowViewModel.cs" />
     <Compile Include="Model.cs" />
     <Compile Include="OneStationDialog.xaml.cs">
@@ -89,6 +91,7 @@
     <Compile Include="StationInfo.xaml.cs">
       <DependentUpon>StationInfo.xaml</DependentUpon>
     </Compile>
+    <Compile Include="ViewModels\PerTocViewModel.cs" />
     <Compile Include="ViewModels\StationInfoViewModel.cs" />
     <Compile Include="Windows\TocEditor.xaml.cs">
       <DependentUpon>TocEditor.xaml</DependentUpon>

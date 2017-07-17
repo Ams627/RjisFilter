@@ -1,6 +1,6 @@
 ﻿namespace RjisFilter
 {
-    interface IDialogService
+    public interface IDialogService
     {
         void ShowDialog();
     }

@@ -68,6 +68,7 @@
     </ApplicationDefinition>
     <Compile Include="ActualDialog.cs" />
     <Compile Include="DictUtils.cs" />
+    <Compile Include="ViewModels\GeneratingViewModel.cs" />
     <Compile Include="IDialogService.cs" />
     <Compile Include="Idms.cs" />
     <Compile Include="LinqExtensions.cs" />
@@ -94,9 +95,16 @@
     <Compile Include="ViewModels\PerTocViewModel.cs" />
     <Compile Include="ViewModels\StationInfoViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Compile Include="Windows\Generating.xaml.cs">
+      <DependentUpon>Generating.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Windows\TocEditor.xaml.cs">
       <DependentUpon>TocEditor.xaml</DependentUpon>
     </Compile>
+    <Page Include="Windows\Generating.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Windows\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

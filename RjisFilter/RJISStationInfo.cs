@@ -4,7 +4,7 @@ namespace RjisFilter
 {
     public partial class RJIS
     {
-        class RJISStationInfo
+        public class RJISStationInfo
         {
             public string AdminAreaCode { get; set; }
             public char Hierarchy { get; set; }

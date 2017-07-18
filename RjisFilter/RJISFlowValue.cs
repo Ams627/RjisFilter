@@ -2,7 +2,7 @@
 
 namespace RjisFilter
 {
-    class RJISFlowValue
+    public class RJISFlowValue
     {
         public RJISFlowValue(string line)
         {
@@ -36,5 +36,10 @@ namespace RjisFilter
         public DateTime EndDate { get; private set; }
         public int DiscountInd { get; private set; }
         public int FlowId { get; private set; }
+
+        public override string ToString()
+        {
+            return Route + "000" + "A" + EndDate + StartDate;
+        }
     }
 }

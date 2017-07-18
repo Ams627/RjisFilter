@@ -45,7 +45,10 @@ namespace RjisFilter
                 var model = new Model(settings, rjis, idms, new Timetable(), new RouteingGuide());
 
                 var tocdialog = new ActualDialog<TocEditor, PerTocViewModel>((a,b)=>new PerTocViewModel(a, b));
-                var mainWindowViewModel = new MainWindowViewModel(model, tocdialog);
+
+                var generating = new ActualDialog<Windows.Generating, ViewModels.GeneratingViewModel>((a, b) => new GeneratingViewModel(a, b));
+
+                var mainWindowViewModel = new MainWindowViewModel(model, tocdialog, generating);
                 var window = new MainWindow(mainWindowViewModel);
                 window.Show();
             }

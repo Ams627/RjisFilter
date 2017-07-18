@@ -2,7 +2,7 @@
 
 namespace RjisFilter
 {
-    class RjisNDF
+    public class RjisNDF
     {
         public string Route { get; set; }
         public string Railcard { get; set; }

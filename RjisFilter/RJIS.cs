@@ -18,12 +18,16 @@ namespace RjisFilter
         private readonly Settings settings;
         private ILookup<string, string> rjisLookup;
 
-        Dictionary<string, List<string>> clusterToStationList;
-        Dictionary<string, List<string>> stationToClusterList;
-        Dictionary<string, List<RJISStationInfo>> locationList;
-        private Dictionary<string, List<RJISFlowValue>> flowDict;
-        private Dictionary<int, List<RJISTicketRecord>> ticketDict;
-        private Dictionary<string, List<RjisNDF>> ndfList;
+        public Dictionary<string, List<string>> ClusterToStationList { get; private set; }
+        public Dictionary<string, List<string>> StationToClusterList { get; private set; }
+        public Dictionary<string, List<RJISStationInfo>> LocationList { get; private set; }
+        public Dictionary<string, List<RJISFlowValue>> FlowDict { get; private set; }
+        public Dictionary<int, List<RJISTicketRecord>> TicketDict { get; private set; }
+        public Dictionary<string, List<string>> StationToGroupIds { get; private set; }
+        public Dictionary<string, List<string>> GroupIdToStationList { get; private set; }
+        public Dictionary<string, string> StationtToZoneNlc { get; private set; }
+
+        public Dictionary<string, List<RjisNDF>> NdfList { get; private set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -61,6 +65,7 @@ namespace RjisFilter
         public RJIS(Settings settings)
         {
             this.settings = settings;
+
             var (ok, folder) = settings.GetFolder("RJISZIPS");
             if (ok)
             {
@@ -151,8 +156,8 @@ namespace RjisFilter
 
             if (!string.IsNullOrEmpty(rjisClusterFile))
             {
-                clusterToStationList = new Dictionary<string, List<string>>();
-                stationToClusterList = new Dictionary<string, List<string>>();
+                ClusterToStationList = new Dictionary<string, List<string>>();
+                StationToClusterList = new Dictionary<string, List<string>>();
                 using (var fileStream = File.OpenRead(rjisClusterFile))
                 using (var streamReader = new StreamReader(fileStream))
                 {
@@ -163,8 +168,8 @@ namespace RjisFilter
                         {
                             var clusterId = line.Substring(1, 4);
                             var member = line.Substring(5, 4);
-                            AddEntry(clusterToStationList, clusterId, member);
-                            AddEntry(stationToClusterList, member, clusterId);
+                            AddEntry(ClusterToStationList, clusterId, member);
+                            AddEntry(StationToClusterList, member, clusterId);
                         }
                         AddLine();
                     }
@@ -177,7 +182,7 @@ namespace RjisFilter
             var rjisLocationFile = rjisLookup["LOC"].First();
             if (!string.IsNullOrEmpty(rjisLocationFile))
             {
-                locationList = new Dictionary<string, List<RJISStationInfo>>();
+                LocationList = new Dictionary<string, List<RJISStationInfo>>();
                 using (var fileStream = File.OpenRead(rjisLocationFile))
                 using (var streamReader = new StreamReader(fileStream))
                 {
@@ -195,7 +200,7 @@ namespace RjisFilter
                             CheckDates(endOk, startOk, quoteOk, endDate, startDate, quoteDate);
                             if (endDate.Date >= DateTime.Now.Date)
                             {
-                                AddEntry(locationList, nlc, new RJISStationInfo
+                                var stationInfo = new RJISStationInfo
                                 {
                                     AdminAreaCode = line.Substring(33, 2),
                                     FareGroupNLC = line.Substring(69, 4),
@@ -207,7 +212,17 @@ namespace RjisFilter
                                     EndDate = endDate,
                                     StartDate = startDate,
                                     QuoteDate = quoteDate,
-                                });
+                                };
+                                AddEntry(LocationList, nlc, stationInfo);
+                                if (nlc != stationInfo.FareGroupNLC)
+                                {
+                                    AddEntry(StationToGroupIds, nlc, stationInfo.FareGroupNLC);
+                                    AddEntry(GroupIdToStationList, stationInfo.FareGroupNLC, nlc);
+                                }
+                                if (stationInfo.ZoneNumber.All(x=>Char.IsDigit(x)))
+                                {
+                                    StationtToZoneNlc.Add(nlc, stationInfo.ZoneNumber);
+                                }
                             }
                         }
                         AddLine();
@@ -215,17 +230,14 @@ namespace RjisFilter
                 }
             }
 
-            var poole = locationList["5883"];
-            var multi = locationList.Where(x => x.Value.Count() > 1);
+            var poole = LocationList["5883"];
+            var multi = LocationList.Where(x => x.Value.Count() > 1);
             Console.WriteLine();
         }
 
 
         void ProcessFlowFile()
         {
-            flowDict = new Dictionary<string, List<RJISFlowValue>>();
-            ticketDict = new Dictionary<int, List<RJISTicketRecord>>();
-
             var rjisFlowFile = rjisLookup["FFL"].First();
             using (var reader = new StreamReader(rjisFlowFile))
             {
@@ -239,10 +251,10 @@ namespace RjisFilter
                         var flowValue = new RJISFlowValue(line);
                         if (flowValue.EndDate.Date >= DateTime.Now.Date)
                         {
-                            DictUtils.AddEntry(flowDict, flow.FlowKey, flowValue);
+                            DictUtils.AddEntry(FlowDict, flow.FlowKey, flowValue);
                             if (line[19] == 'R')
                             {
-                                DictUtils.AddEntry(flowDict, flow.GetReversedFlow().FlowKey, flowValue);
+                                DictUtils.AddEntry(FlowDict, flow.GetReversedFlow().FlowKey, flowValue);
                             }
                         }
                     }
@@ -250,7 +262,7 @@ namespace RjisFilter
                     {
                         var key = Convert.ToInt32(line.Substring(2, 7));
                         var ticketValue = new RJISTicketRecord(line);
-                        DictUtils.AddEntry(ticketDict, key, ticketValue);
+                        DictUtils.AddEntry(TicketDict, key, ticketValue);
                     }
                     linenumber++;
                     AddLine();
@@ -266,7 +278,7 @@ namespace RjisFilter
 
                 using (var reader = new StreamReader(rjisFlowFile))
                 {
-                    ndfList = new Dictionary<string, List<RjisNDF>>();
+                    NdfList = new Dictionary<string, List<RjisNDF>>();
                     var linenumber = 0;
                     string line;
                     while ((line = reader.ReadLine()) != null)
@@ -296,7 +308,7 @@ namespace RjisFilter
 
                             if (endDate.Date >= DateTime.Now.Date)
                             {
-                                DictUtils.AddEntry(ndfList, flow.FlowKey, ndf);
+                                DictUtils.AddEntry(NdfList, flow.FlowKey, ndf);
                             }
                         }
                         linenumber++;
@@ -342,6 +354,60 @@ namespace RjisFilter
                 i = Convert.ToInt32(name.Substring(l - 3));
             }
             return i;
+        }
+
+        void GenerateOutputFiles(string toc)
+        {
+            var (ok, outputFolder) = settings.GetFolder("output");
+            if (ok)
+            {
+                var (oktemp, tempFolder) = settings.GetFolder("temp");
+                if (oktemp)
+                {
+                    var outputFfl = Path.Combine(tempFolder, Path.GetFileName(rjisLookup["FFL"].First()));
+                    var outputNFO = Path.Combine(tempFolder, Path.GetFileName(rjisLookup["NFO"].First()));
+                    settings.PerTocNlcList.TryGetValue(toc, out var originSet);
+                    if (originSet != null && originSet.Count > 0)
+                    {
+                        var groupList = originSet.SelectMany(x => DictUtils.GetResults(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
+                        var stationsAndGroupList = groupList.Concat(originSet);
+                        var clusterList = stationsAndGroupList.SelectMany(x => DictUtils.GetResults(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
+                        var zoneList = originSet.Select(x => DictUtils.GetResult(StationtToZoneNlc, x)).Where(x => x != string.Empty).GroupBy(x => x).Select(y => y.First());
+                        var allSearchStations = clusterList.Concat(groupList).Concat(zoneList).Concat(originSet);
+
+                        var outputFlowDictionary = new Dictionary<string, List<RJISFlowValue>>();
+                        var flowIdList = new List<int>();
+
+                        using (var outputStream = new StreamWriter(outputFfl))
+                        {
+                            foreach (var flow in FlowDict)
+                            {
+                                foreach (var flowV in flow.Value)
+                                {
+                                    var origin = flow.Key.Substring(0, 4);
+                                    if (allSearchStations.Contains(origin))
+                                    {
+
+                                    }
+                                    outputStream.Write(flow.Key);
+                                    outputStream.Write(flow.Value);
+                                    flowIdList.AddRange(flow.Value.Select(x => x.FlowId));
+                                }
+                            }
+                        }
+                        var allSearchStationsNDF = groupList.Concat(zoneList).Concat(originSet);
+                        foreach (var flow in NdfList)
+                        {
+                            var origin = flow.Key.Substring(0, 4);
+                            if (allSearchStations.Contains(origin))
+                            {
+
+                            }
+                        }
+                    }
+                }
+            }
+
         }
     }
 }

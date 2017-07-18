@@ -22,5 +22,9 @@ namespace RjisFilter
             Timetable = timetable;
             RouteingGuide = routeingGuide;
         }
+
+        public void Generate(string toc)
+        {
+        }
     }
 }

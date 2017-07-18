@@ -13,17 +13,21 @@ namespace RjisFilter
     {
         private readonly Model model;
         private readonly IDialogService tocDialog;
+        private readonly IDialogService generatingDialog;
 
         public ObservableCollection<string> Tocs { get; set; }
 
         public RelayCommand<string> ShowTocCommand { get; set; }
+        public RelayCommand<string> GenerateFilteredSetCommand { get; set; }
+
 
         public string CurrentToc { get; set; }
 
-        public MainWindowViewModel(Model model, IDialogService tocDialog)
+        public MainWindowViewModel(Model model, IDialogService tocDialog, IDialogService generatingDialog)
         {
             this.model = model;
             this.tocDialog = tocDialog;
+            this.generatingDialog = generatingDialog;
             CurrentToc = model.Settings.PerTocNlcList.First().Key;
             Tocs = new ObservableCollection<string>(model.Settings.PerTocNlcList.Keys);
             //ShowTocCommand = new RelayCommand<string>((toc) => {
@@ -35,6 +39,12 @@ namespace RjisFilter
             ShowTocCommand = new RelayCommand<string>((toc) => {
                 tocDialog.ShowDialog(model, toc);
             });
+
+            GenerateFilteredSetCommand = new RelayCommand<string>((toc) => {
+                model.Generate(toc);
+                generatingDialog.ShowDialog(model, toc);
+            });
+
 
             model.Rjis.PropertyChanged += Rjis_PropertyChanged;
 

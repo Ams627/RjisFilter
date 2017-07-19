@@ -16,18 +16,20 @@ namespace RjisFilter
     public partial class RJIS : INotifyPropertyChanged
     {
         private readonly Settings settings;
-        private ILookup<string, string> rjisLookup;
+        private Dictionary<string, string> rjisFilenameDict;
 
         public Dictionary<string, List<string>> ClusterToStationList { get; private set; }
         public Dictionary<string, List<string>> StationToClusterList { get; private set; }
         public Dictionary<string, List<RJISStationInfo>> LocationList { get; private set; }
         public Dictionary<string, List<RJISFlowValue>> FlowDict { get; private set; }
+        public List<RJISFlowValue> FlowList { get; private set; }
         public Dictionary<int, List<RJISTicketRecord>> TicketDict { get; private set; }
         public Dictionary<string, List<string>> StationToGroupIds { get; private set; }
         public Dictionary<string, List<string>> GroupIdToStationList { get; private set; }
         public Dictionary<string, string> StationtToZoneNlc { get; private set; }
+        public List<RjisNDF> NdfList { get; private set; }
 
-        public Dictionary<string, List<RjisNDF>> NdfList { get; private set; }
+        //public Dictionary<string, List<RjisNDF>> NdfList { get; private set; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -106,20 +108,21 @@ namespace RjisFilter
                                 }
                             }
                         }
-                        rjisLookup = unzipNames.ToLookup(x => Path.GetExtension(x).Substring(1), StringComparer.OrdinalIgnoreCase);
+                        rjisFilenameDict = unzipNames.ToDictionary(x => Path.GetExtension(x).Substring(1), StringComparer.OrdinalIgnoreCase);
                     }
                 }
                 else
                 {
                     var serialNumber = GetRJISFilenameSerialNumber(rjisNonZips.OrderBy(x => GetRJISFilenameSerialNumber(x)).Last());
-                    rjisLookup = rjisNonZips.ToLookup(x => Path.GetExtension(x).Substring(1), StringComparer.OrdinalIgnoreCase);
+                    var rjisLookup = rjisNonZips.ToLookup(x => Path.GetExtension(x).Substring(1), StringComparer.OrdinalIgnoreCase);
+                    var tooMany = rjisLookup.Where(x => x.Count() > 1);
+                    if (tooMany.Count() > 0)
+                    {
+                        throw new Exception("More than one RJIS set in the RJIS folder.");
+                    }
+                    rjisFilenameDict = rjisLookup.ToDictionary(x => x.Key, x=>x.First());
                 }
 
-                var tooMany = rjisLookup.Where(x => x.Count() > 1);
-                if (tooMany.Count() > 0)
-                {
-                    throw new Exception("More than one RJIS set in the RJIS folder.");
-                }
 
                 var tasklist = new List<Action> { }; // ProcessClustersFile, ProcessLocationFile, ProcessFlowFile, ProcessNDFFile };
                 var tlist = tasklist.Select(t => Task.Run(t));
@@ -152,7 +155,7 @@ namespace RjisFilter
 
         private void ProcessClustersFile()
         {
-            var rjisClusterFile = rjisLookup["FSC"].First();
+            var rjisClusterFile = rjisFilenameDict["FSC"];
 
             if (!string.IsNullOrEmpty(rjisClusterFile))
             {
@@ -179,7 +182,7 @@ namespace RjisFilter
 
         private void ProcessLocationFile()
         {
-            var rjisLocationFile = rjisLookup["LOC"].First();
+            var rjisLocationFile = rjisFilenameDict["LOC"];
             if (!string.IsNullOrEmpty(rjisLocationFile))
             {
                 LocationList = new Dictionary<string, List<RJISStationInfo>>();
@@ -238,7 +241,7 @@ namespace RjisFilter
 
         void ProcessFlowFile()
         {
-            var rjisFlowFile = rjisLookup["FFL"].First();
+            var rjisFlowFile = rjisFilenameDict["FFL"];
             using (var reader = new StreamReader(rjisFlowFile))
             {
                 var linenumber = 0;
@@ -247,15 +250,10 @@ namespace RjisFilter
                 {
                     if (line.Substring(0, 2) == "RF")
                     {
-                        var flow = new RjisFlow(line.Substring(2, 8));
                         var flowValue = new RJISFlowValue(line);
                         if (flowValue.EndDate.Date >= DateTime.Now.Date)
                         {
-                            DictUtils.AddEntry(FlowDict, flow.FlowKey, flowValue);
-                            if (line[19] == 'R')
-                            {
-                                DictUtils.AddEntry(FlowDict, flow.GetReversedFlow().FlowKey, flowValue);
-                            }
+                            FlowList.Add(flowValue);
                         }
                     }
                     else if (line.Substring(0, 2) == "RT")
@@ -274,41 +272,46 @@ namespace RjisFilter
         {
             try
             {
-                var rjisFlowFile = rjisLookup["NFO"].First();
+                var rjisFlowFile = rjisFilenameDict["NFO"];
 
                 using (var reader = new StreamReader(rjisFlowFile))
                 {
-                    NdfList = new Dictionary<string, List<RjisNDF>>();
+                    NdfList = new List<RjisNDF>();
                     var linenumber = 0;
                     string line;
                     while ((line = reader.ReadLine()) != null)
                     {
                         if (line[0] == 'R')
                         {
-                            var flow = new RjisFlow(line.Substring(1, 8));
-                            var (endOk, endDate) = RjisUtils.GetRjisDate(line.Substring(21, 8));
-                            var (startOk, startDate) = RjisUtils.GetRjisDate(line.Substring(29, 8));
-                            var (quoteOk, quoteDate) = RjisUtils.GetRjisDate(line.Substring(37, 8));
-                            CheckDates(endOk, startOk, quoteOk, endDate, startDate, quoteDate);
-
-                            var ndf = new RjisNDF
+                            var compositeIndicator = line[64];
+                            if (compositeIndicator == 'Y')
                             {
-                                Route = line.Substring(9, 5),
-                                Railcard = line.Substring(14, 3),
-                                TicketCode = line.Substring(17, 3),
-                                EndDate = endDate,
-                                StartDate = startDate,
-                                QuoteDate = quoteDate,
-                                AdultFare = Convert.ToInt32(line.Substring(46, 8)),
-                                ChildFare = Convert.ToInt32(line.Substring(54, 8)),
-                                RestrictionCode = line.Substring(62, 2),
-                                CrossLondon = line[65],
-                                PrivateInd = line[66]
-                            };
+                                var (endOk, endDate) = RjisUtils.GetRjisDate(line.Substring(21, 8));
+                                var (startOk, startDate) = RjisUtils.GetRjisDate(line.Substring(29, 8));
+                                var (quoteOk, quoteDate) = RjisUtils.GetRjisDate(line.Substring(37, 8));
+                                CheckDates(endOk, startOk, quoteOk, endDate, startDate, quoteDate);
 
-                            if (endDate.Date >= DateTime.Now.Date)
-                            {
-                                DictUtils.AddEntry(NdfList, flow.FlowKey, ndf);
+                                var ndf = new RjisNDF
+                                {
+                                    Origin = line.Substring(1, 4),
+                                    Destination = line.Substring(5, 4),
+                                    Route = line.Substring(9, 5),
+                                    Railcard = line.Substring(14, 3),
+                                    TicketCode = line.Substring(17, 3),
+                                    EndDate = endDate,
+                                    StartDate = startDate,
+                                    QuoteDate = quoteDate,
+                                    AdultFare = Convert.ToInt32(line.Substring(46, 8)),
+                                    ChildFare = Convert.ToInt32(line.Substring(54, 8)),
+                                    RestrictionCode = line.Substring(62, 2),
+                                    CrossLondon = line[65],
+                                    PrivateInd = line[66]
+                                };
+
+                                if (endDate.Date >= DateTime.Now.Date)
+                                {
+                                    NdfList.Add(ndf);
+                                }
                             }
                         }
                         linenumber++;
@@ -364,8 +367,9 @@ namespace RjisFilter
                 var (oktemp, tempFolder) = settings.GetFolder("temp");
                 if (oktemp)
                 {
-                    var outputFfl = Path.Combine(tempFolder, Path.GetFileName(rjisLookup["FFL"].First()));
-                    var outputNFO = Path.Combine(tempFolder, Path.GetFileName(rjisLookup["NFO"].First()));
+                    var outputFfl = Path.Combine(tempFolder, Path.GetFileName(rjisFilenameDict["FFL"]));
+                    var outputNFO = Path.Combine(tempFolder, Path.GetFileName(rjisFilenameDict["NFO"]));
+                    var outputZip = $"RJFAF{GetRJISFilenameSerialNumber(outputNFO):D3}.zip";
                     settings.PerTocNlcList.TryGetValue(toc, out var originSet);
                     if (originSet != null && originSet.Count > 0)
                     {
@@ -380,34 +384,55 @@ namespace RjisFilter
 
                         using (var outputStream = new StreamWriter(outputFfl))
                         {
-                            foreach (var flow in FlowDict)
+                            foreach (var flow in FlowList)
                             {
-                                foreach (var flowV in flow.Value)
+                                if (allSearchStations.Contains(flow.Origin) || flow.Direction == 'R' && allSearchStations.Contains(flow.Destination))
                                 {
-                                    var origin = flow.Key.Substring(0, 4);
-                                    if (allSearchStations.Contains(origin))
-                                    {
+                                    outputStream.WriteLine(flow);
+                                }
+                                flowIdList.Add(flow.FlowId);
+                            }
+                            foreach (var id in flowIdList)
+                            {
+                                TicketDict.TryGetValue(id, out var ticketlist);
+                                if (ticketlist == null)
+                                {
+                                    throw new Exception($"list of tickets for flow id {id} was not found in the ticket dictionary.");
+                                }
+                                ticketlist.ForEach(x => outputStream.WriteLine($"^RF{id:D7}{x.TicketCode}{x.Price:D8}{x.RestrictionCode}"));
+                            }
+                        }
 
-                                    }
-                                    outputStream.Write(flow.Key);
-                                    outputStream.Write(flow.Value);
-                                    flowIdList.AddRange(flow.Value.Select(x => x.FlowId));
+                        var allSearchStationsNDF = originSet.Concat(groupList).Concat(zoneList);
+                        using (var outputStream = new StreamWriter(outputNFO))
+                        {
+                            foreach (var ndf in NdfList)
+                            {
+                                if (allSearchStationsNDF.Contains(ndf.Origin))
+                                {
+                                    outputStream.WriteLine(ndf);
                                 }
                             }
                         }
-                        var allSearchStationsNDF = groupList.Concat(zoneList).Concat(originSet);
-                        foreach (var flow in NdfList)
-                        {
-                            var origin = flow.Key.Substring(0, 4);
-                            if (allSearchStations.Contains(origin))
-                            {
 
+                        var extensionList = new List<string> {
+                            "DAT",  "DIS",  "FNS",  "FRR",  "FSC",  "LOC",  "RCM",  "RLC",  "RST",  "RTE",
+                            "SUP",  "TAP",  "TCL",  "TJS",  "TOC",  "TPB",  "TPK",  "TPN",  "TRR",  "TSP",
+                            "TTY",  "TVL"};
+
+                        using (FileStream zipfile = new FileStream(outputZip, FileMode.Open))
+                        using (ZipArchive archive = new ZipArchive(zipfile, ZipArchiveMode.Create))
+                        {
+                            foreach (var extension in extensionList)
+                            {
+                                var zipentry = archive.CreateEntryFromFile(rjisFilenameDict[extension], Path.GetFileName(rjisFilenameDict[extension]));
                             }
+                            archive.CreateEntryFromFile(outputFfl, Path.GetFileName(outputFfl));
+                            archive.CreateEntryFromFile(outputNFO, Path.GetFileName(outputNFO));
                         }
                     }
                 }
             }
-
         }
     }
 }

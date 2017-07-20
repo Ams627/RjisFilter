@@ -41,8 +41,11 @@ namespace RjisFilter
             });
 
             GenerateFilteredSetCommand = new RelayCommand<string>((toc) => {
-                model.Generate(toc);
-                generatingDialog.ShowDialog(model, toc);
+                if (!string.IsNullOrWhiteSpace(toc))
+                {
+                    model.Generate(toc);
+                    generatingDialog.ShowDialog(model, toc);
+                }
             });
 
 

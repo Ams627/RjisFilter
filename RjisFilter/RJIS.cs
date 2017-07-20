@@ -24,6 +24,7 @@ namespace RjisFilter
         public Dictionary<string, List<RJISFlowValue>> FlowDict { get; private set; }
         public List<RJISFlowValue> FlowList { get; private set; }
         public Dictionary<int, List<RJISTicketRecord>> TicketDict { get; private set; }
+        public Dictionary<int, HashSet<string>> FlowIdToTicketSet { get; private set; }
         public Dictionary<string, List<string>> StationToGroupIds { get; private set; }
         public Dictionary<string, List<string>> GroupIdToStationList { get; private set; }
         public Dictionary<string, string> StationtToZoneNlc { get; private set; }
@@ -124,7 +125,7 @@ namespace RjisFilter
                 }
 
 
-                var tasklist = new List<Action> { }; // ProcessClustersFile, ProcessLocationFile, ProcessFlowFile, ProcessNDFFile };
+                var tasklist = new List<Action> { ProcessClustersFile, ProcessLocationFile, ProcessFlowFile, ProcessNDFFile };
                 var tlist = tasklist.Select(t => Task.Run(t));
 
                 var start = DateTime.Now;
@@ -186,6 +187,10 @@ namespace RjisFilter
             if (!string.IsNullOrEmpty(rjisLocationFile))
             {
                 LocationList = new Dictionary<string, List<RJISStationInfo>>();
+                StationToGroupIds = new Dictionary<string, List<string>>();
+                GroupIdToStationList = new Dictionary<string, List<string>>();
+                StationtToZoneNlc = new Dictionary<string, string>();
+
                 using (var fileStream = File.OpenRead(rjisLocationFile))
                 using (var streamReader = new StreamReader(fileStream))
                 {
@@ -242,6 +247,9 @@ namespace RjisFilter
         void ProcessFlowFile()
         {
             var rjisFlowFile = rjisFilenameDict["FFL"];
+            FlowList = new List<RJISFlowValue>();
+            TicketDict = new Dictionary<int, List<RJISTicketRecord>>();
+            FlowIdToTicketSet = new Dictionary<int, HashSet<string>>();
             using (var reader = new StreamReader(rjisFlowFile))
             {
                 var linenumber = 0;
@@ -261,6 +269,7 @@ namespace RjisFilter
                         var key = Convert.ToInt32(line.Substring(2, 7));
                         var ticketValue = new RJISTicketRecord(line);
                         DictUtils.AddEntry(TicketDict, key, ticketValue);
+                        DictUtils.AddEntry(FlowIdToTicketSet, key, ticketValue.TicketCode);
                     }
                     linenumber++;
                     AddLine();
@@ -359,9 +368,10 @@ namespace RjisFilter
             return i;
         }
 
-        void GenerateOutputFiles(string toc)
+        public void GenerateOutputFiles(string toc)
         {
             var (ok, outputFolder) = settings.GetFolder("output");
+            Directory.CreateDirectory(outputFolder);
             if (ok)
             {
                 var (oktemp, tempFolder) = settings.GetFolder("temp");
@@ -369,15 +379,16 @@ namespace RjisFilter
                 {
                     var outputFfl = Path.Combine(tempFolder, Path.GetFileName(rjisFilenameDict["FFL"]));
                     var outputNFO = Path.Combine(tempFolder, Path.GetFileName(rjisFilenameDict["NFO"]));
-                    var outputZip = $"RJFAF{GetRJISFilenameSerialNumber(outputNFO):D3}.zip";
-                    settings.PerTocNlcList.TryGetValue(toc, out var originSet);
-                    if (originSet != null && originSet.Count > 0)
+                    var outputZip = Path.Combine(outputFolder, $"RJFAF{GetRJISFilenameSerialNumber(outputNFO):D3}.zip");
+                    settings.PerTocNlcList.TryGetValue(toc, out var wantedOrigins);
+                    settings.PerTocTicketTypeList.TryGetValue(toc, out var wantedTickets);
+                    if (wantedOrigins != null && wantedOrigins.Any())
                     {
-                        var groupList = originSet.SelectMany(x => DictUtils.GetResults(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
-                        var stationsAndGroupList = groupList.Concat(originSet);
+                        var groupList = wantedOrigins.SelectMany(x => DictUtils.GetResults(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
+                        var stationsAndGroupList = groupList.Concat(wantedOrigins);
                         var clusterList = stationsAndGroupList.SelectMany(x => DictUtils.GetResults(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
-                        var zoneList = originSet.Select(x => DictUtils.GetResult(StationtToZoneNlc, x)).Where(x => x != string.Empty).GroupBy(x => x).Select(y => y.First());
-                        var allSearchStations = clusterList.Concat(groupList).Concat(zoneList).Concat(originSet);
+                        var zoneList = wantedOrigins.Select(x => DictUtils.GetResult(StationtToZoneNlc, x)).Where(x => x != string.Empty).GroupBy(x => x).Select(y => y.First());
+                        var allSearchStations = clusterList.Concat(groupList).Concat(zoneList).Concat(wantedOrigins).ToHashSet();
 
                         var outputFlowDictionary = new Dictionary<string, List<RJISFlowValue>>();
                         var flowIdList = new List<int>();
@@ -386,11 +397,16 @@ namespace RjisFilter
                         {
                             foreach (var flow in FlowList)
                             {
-                                if (allSearchStations.Contains(flow.Origin) || flow.Direction == 'R' && allSearchStations.Contains(flow.Destination))
+                                FlowIdToTicketSet.TryGetValue(flow.FlowId, out var ticketlistForThisFlow);
+                                if (ticketlistForThisFlow != null)
                                 {
-                                    outputStream.WriteLine(flow);
+                                    var doesFlowContainAnyTickets = (wantedTickets == null || !wantedTickets.Any() || wantedTickets.Intersect(ticketlistForThisFlow).Any());
+                                    if (doesFlowContainAnyTickets && (allSearchStations.Contains(flow.Origin) || (flow.Direction == 'R' && allSearchStations.Contains(flow.Destination))))
+                                    {
+                                        outputStream.WriteLine(flow);
+                                    }
+                                    flowIdList.Add(flow.FlowId);
                                 }
-                                flowIdList.Add(flow.FlowId);
                             }
                             foreach (var id in flowIdList)
                             {
@@ -399,16 +415,16 @@ namespace RjisFilter
                                 {
                                     throw new Exception($"list of tickets for flow id {id} was not found in the ticket dictionary.");
                                 }
-                                ticketlist.ForEach(x => outputStream.WriteLine($"^RF{id:D7}{x.TicketCode}{x.Price:D8}{x.RestrictionCode}"));
+                                ticketlist.Where(x=>wantedTickets.Contains(x.TicketCode)).ToList().ForEach(x =>  outputStream.WriteLine($"RT{id:D7}{x.TicketCode}{x.Price:D8}{x.RestrictionCode}"));
                             }
                         }
 
-                        var allSearchStationsNDF = originSet.Concat(groupList).Concat(zoneList);
+                        var allSearchStationsNDF = wantedOrigins.Concat(groupList).Concat(zoneList);
                         using (var outputStream = new StreamWriter(outputNFO))
                         {
                             foreach (var ndf in NdfList)
                             {
-                                if (allSearchStationsNDF.Contains(ndf.Origin))
+                                if (allSearchStationsNDF.Contains(ndf.Origin) && wantedTickets.Contains(ndf.TicketCode))
                                 {
                                     outputStream.WriteLine(ndf);
                                 }
@@ -420,7 +436,7 @@ namespace RjisFilter
                             "SUP",  "TAP",  "TCL",  "TJS",  "TOC",  "TPB",  "TPK",  "TPN",  "TRR",  "TSP",
                             "TTY",  "TVL"};
 
-                        using (FileStream zipfile = new FileStream(outputZip, FileMode.Open))
+                        using (FileStream zipfile = new FileStream(outputZip, FileMode.Create))
                         using (ZipArchive archive = new ZipArchive(zipfile, ZipArchiveMode.Create))
                         {
                             foreach (var extension in extensionList)

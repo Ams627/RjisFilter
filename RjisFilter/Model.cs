@@ -25,6 +25,7 @@ namespace RjisFilter
 
         public void Generate(string toc)
         {
+            Rjis.GenerateOutputFiles(toc);
         }
     }
 }

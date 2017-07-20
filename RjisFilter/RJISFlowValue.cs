@@ -25,7 +25,7 @@ namespace RjisFilter
             {
                 throw new Exception("invalid start date");
             }
-
+            Direction = line[19];
             Toc = line.Substring(36, 3);
             CrossLondonInd = Convert.ToInt32(line[39]);
             DiscountInd = int.Parse(line.Substring(40, 1));

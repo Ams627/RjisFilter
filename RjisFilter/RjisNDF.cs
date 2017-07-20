@@ -20,7 +20,7 @@ namespace RjisFilter
 
         public override string ToString()
         {
-            return $"R{Origin}{Destination}{Route}{Railcard}{TicketCode}Y{EndDate:ddMMyyyy}{StartDate:ddMMyyyy}{QuoteDate:ddMMyyyy}N{AdultFare:D8}{ChildFare:D8}{RestrictionCode}{CrossLondon}{PrivateInd}";
+            return $"R{Origin}{Destination}{Route}{Railcard}{TicketCode}Y{EndDate:ddMMyyyy}{StartDate:ddMMyyyy}{QuoteDate:ddMMyyyy}N{AdultFare:D8}{ChildFare:D8}{RestrictionCode}Y{CrossLondon}{PrivateInd}";
         }
     }
 }

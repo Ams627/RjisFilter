@@ -15,6 +15,18 @@ namespace RjisFilter
             list.Add(listEntry);
         }
 
+        public static void AddEntry<T, U>(Dictionary<T, HashSet<U>> d, T key, U listEntry)
+        {
+            if (!d.TryGetValue(key, out var list))
+            {
+                list = new HashSet<U>();
+                d.Add(key, list);
+            }
+            list.Add(listEntry);
+        }
+
+
+
         public static IEnumerable<string> GetResults(Dictionary<string, List<string>> dict, string key)
         {
             dict.TryGetValue(key, out var result);

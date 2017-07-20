@@ -42,7 +42,7 @@ namespace RjisFilter
         /// of these come from settings .xml under the Folders key. Each folder is specified with a Folder element with
         /// attributes Name and Location.
         /// </summary>
-        private Dictionary<string, string> folders = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, string> folders;
 
         public string CurrentTocName { get; set; }
         public HashSet<string> GlobalTicketTypes { get; private set; }
@@ -118,7 +118,7 @@ namespace RjisFilter
             {
                 Name = (string)folder.Attribute("Name"),
                 Location = (string)folder.Attribute("Location")
-            }).ToDictionary(x => x.Name, x => x.Location);
+            }).ToDictionary(x => x.Name, x => x.Location, StringComparer.OrdinalIgnoreCase);
 
             foreach (var folder in folders)
             {

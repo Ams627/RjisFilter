@@ -48,6 +48,7 @@ namespace RjisFilter
         public HashSet<string> GlobalTicketTypes { get; private set; }
         public Dictionary<string, SortedSet<string>> PerTocNlcList { get; private set; }
         public Dictionary<string, HashSet<string>> PerTocTicketTypeList { get; private set; }
+        public Dictionary<string, HashSet<string>> PerTocRouteList { get; private set; }
         public List<string> Warnings { get; private set; } = new List<string>();
 
         static Settings()
@@ -164,6 +165,17 @@ namespace RjisFilter
                 Warnings.Add($"Warning: <Station> node does not have an NLC code at line {li.LineNumber}");
             }
 
+            // Check for routes without route codes:
+            var routes = doc.Descendants("Route")?.Where(x => x.Attribute("Code") == null);
+            if (routes != null)
+            {
+                foreach (var invalidStation in stations)
+                {
+                    var li = invalidStation as IXmlLineInfo;
+                    Warnings.Add($"Warning: <Route> node does not have an NLC code at line {li.LineNumber}");
+                }
+            }
+
             // check for ticket types without code:
             var allTicketTypes = doc.Descendants("TicketTypes").Where(x => x.Attribute("Code") == null);
             foreach (var ticket in allTicketTypes)
@@ -193,6 +205,10 @@ namespace RjisFilter
             PerTocTicketTypeList = validStationSets.ToDictionary(
                 x => x.Attribute("Name").Value,
                 x => x.Descendants("TicketType").Where(e => e.Attribute("Code") != null).Select(e => e.Attribute("Code").Value).ToHashSet(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
+
+            PerTocRouteList = validStationSets.ToDictionary(
+                x => x.Attribute("Name").Value,
+                x => x.Descendants("Route").Where(e => e.Attribute("Code") != null).Select(e => e.Attribute("Code").Value).ToHashSet(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
 
             var (ok, logFolder) = GetFolder("log");
             if (!ok)

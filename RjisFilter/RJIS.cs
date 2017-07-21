@@ -23,11 +23,35 @@ namespace RjisFilter
         public Dictionary<string, List<RJISStationInfo>> LocationList { get; private set; }
         public Dictionary<string, List<RJISFlowValue>> FlowDict { get; private set; }
         public List<RJISFlowValue> FlowList { get; private set; }
+
+        /// <summary>
+        /// From a flow ID, get a list of ticket records (T records) - this is read from the FFL file:
+        /// </summary>
         public Dictionary<int, List<RJISTicketRecord>> TicketDict { get; private set; }
+
+        /// <summary>
+        /// For each flow ID in the FFL file, yield a list of ticket codes:
+        /// </summary>
         public Dictionary<int, HashSet<string>> FlowIdToTicketSet { get; private set; }
+
+        /// <summary>
+        /// From a station, get a list of groups of which the station is a members (normally only one)
+        /// </summary>
         public Dictionary<string, List<string>> StationToGroupIds { get; private set; }
+
+        /// <summary>
+        /// from a group ID, get a list of individual stations which are members of the group
+        /// </summary>
         public Dictionary<string, List<string>> GroupIdToStationList { get; private set; }
+
+        /// <summary>
+        /// from a station, get the zone of which it is a member
+        /// </summary>
         public Dictionary<string, string> StationtToZoneNlc { get; private set; }
+
+        /// <summary>
+        /// List of all NDFs read from the NFO file:
+        /// </summary>
         public List<RjisNDF> NdfList { get; private set; }
 
         //public Dictionary<string, List<RjisNDF>> NdfList { get; private set; }
@@ -391,10 +415,12 @@ namespace RjisFilter
                         var allSearchStations = clusterList.Concat(groupList).Concat(zoneList).Concat(wantedOrigins).ToHashSet();
 
                         var outputFlowDictionary = new Dictionary<string, List<RJISFlowValue>>();
-                        var flowIdList = new List<int>();
+                        var wantedFlowIds = new List<int>();
 
+                        // write new flow file:
                         using (var outputStream = new StreamWriter(outputFfl))
                         {
+                            // write all F records:
                             foreach (var flow in FlowList)
                             {
                                 FlowIdToTicketSet.TryGetValue(flow.FlowId, out var ticketlistForThisFlow);
@@ -405,10 +431,12 @@ namespace RjisFilter
                                     {
                                         outputStream.WriteLine(flow);
                                     }
-                                    flowIdList.Add(flow.FlowId);
+                                    wantedFlowIds.Add(flow.FlowId);
                                 }
                             }
-                            foreach (var id in flowIdList)
+
+                            // write all T records:
+                            foreach (var id in wantedFlowIds)
                             {
                                 TicketDict.TryGetValue(id, out var ticketlist);
                                 if (ticketlist == null)
@@ -419,6 +447,7 @@ namespace RjisFilter
                             }
                         }
 
+                        // write new nfo file:
                         var allSearchStationsNDF = wantedOrigins.Concat(groupList).Concat(zoneList);
                         using (var outputStream = new StreamWriter(outputNFO))
                         {

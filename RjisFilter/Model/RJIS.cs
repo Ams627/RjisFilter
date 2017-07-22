@@ -154,7 +154,7 @@ namespace RjisFilter
                 }
 
 
-                var tasklist = new List<Action> { ProcessClustersFile, ProcessLocationFile, ProcessFlowFile, ProcessNDFFile };
+                var tasklist = new List<Action> { ProcessClustersFile }; //, ProcessLocationFile, ProcessFlowFile, ProcessNDFFile };
                 var tlist = tasklist.Select(t => Task.Run(t));
 
                 var start = DateTime.Now;

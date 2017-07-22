@@ -100,18 +100,19 @@ namespace RjisFilter
                                 .Where(x => string.Equals(x.Element(ns + "UnattendedTIS").Value, "true", StringComparison.OrdinalIgnoreCase))
                                 .Where(x => !x.Element(ns + "CRS")?.IsEmpty ?? false)
                                 .Where(x => !x.Element(ns + "Nlc")?.IsEmpty ?? false)
-                                .Where(x => (x.Element(ns + "OJPEnabled")?.Value ?? "") == "true")
                                 .Where(x => Regex.Match(x.Element(ns + "Nlc")?.Value, "^[0-9A-Z][0-9A-Z][0-9][0-9]$").Success);
                ;
 
             // an NLC can have several CRS codes - we produce a dictionary mapping an NLC to an "inner" dictionary.
             // the inner dictionary maps CRS to Tiplocs.
-            nlcToCrsToTiploc = validStationElements.GroupBy(x=>x.Element("Nlc").Value)
+            nlcToCrsToTiploc = validStationElements
+                .Where(x => (x.Element(ns + "OJPEnabled")?.Value ?? "") == "true")
+                .GroupBy(x => x.Element("Nlc").Value)
                 .ToDictionary(x=>x.Key, x=>x.GroupBy(y=>y.Element("CRS").Value)
                 .ToDictionary(y=>y.Key, y=>y.Select(z=>z.Element("Tiploc")?.Value).ToList()));
 
             // a dictionary mapping tiploc codes to CRS codes:
-            var tiplocToCRS2 = validStationElements.Where(x=>(x.Element("Tiploc")?.IsEmpty ?? true) == false)
+            tiplocToCrs = validStationElements.Where(x=>(x.Element("Tiploc")?.IsEmpty ?? true) == false)
                 .GroupBy(x=>x.Element("Tiploc").Value).ToDictionary(x=>x.Key, x=>x.Select(y=>y.Element("CRS").Value).First());
 
             // a dictionary mapping CRS to a list of Tiplocs - we must aggregate lists from all occurences of CRS codes
@@ -144,13 +145,6 @@ namespace RjisFilter
 
             nlcToStationName = validStationElements.GroupBy(x => x.Element("Nlc").Value)
                 .ToDictionary(x => x.Key, x => x.Elements("Name").First().Value);
-
-
-
-
-Console.WriteLine();
-
-            //var multiCRS = nlcToStationName.Where(x => x.Value.Crs.Count() > 1).ToList();
         }
 
 
@@ -167,6 +161,12 @@ Console.WriteLine();
             Debug.Assert(!string.IsNullOrWhiteSpace(nlc) && nlc.Length == 4);
             var tryResult = nlcToCrsToTiploc.TryGetValue(nlc, out var crsToTiploc);
             var result = tryResult ? string.Join(", ", crsToTiploc.Keys) : "STATION CRS NOT FOUND";
+            return result;
+        }
+
+        public string GetCrsFromTiploc(string crs)
+        {
+            tiplocToCrs.TryGetValue(crs, out var result);
             return result;
         }
 

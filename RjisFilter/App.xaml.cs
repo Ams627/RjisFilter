@@ -39,10 +39,15 @@ namespace RjisFilter
 
             settings = new Settings();
             var idms = new Idms(settings);
+            while (!idms.Ready)
+            {
+                Thread.Sleep(10);
+            }
             var rjis = new RJIS(settings);
+            var timetable = new Timetable(settings, idms);
             try
             {
-                var model = new Model(settings, rjis, idms, new Timetable(), new RouteingGuide());
+                var model = new Model(settings, rjis, idms, timetable, new RouteingGuide());
 
                 var tocdialog = new ActualDialog<TocEditor, PerTocViewModel>((a,b)=>new PerTocViewModel(a, b));
 

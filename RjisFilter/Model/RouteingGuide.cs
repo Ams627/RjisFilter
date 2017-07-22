@@ -1,4 +1,4 @@
-﻿namespace RjisFilter
+﻿namespace RjisFilter.Model
 {
     public class RouteingGuide
     {

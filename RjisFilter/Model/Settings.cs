@@ -8,7 +8,7 @@ using System.IO;
 using System.Xml.Linq;
 using System.Xml;
 
-namespace RjisFilter
+namespace RjisFilter.Model
 {
     public class Settings
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RjisFilter
+namespace RjisFilter.Model
 {
     public partial class RJIS
     {

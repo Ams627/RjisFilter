@@ -1,7 +1,8 @@
-﻿namespace RjisFilter
+﻿using RjisFilter.Model;
+namespace RjisFilter
 {
     public interface IDialogService
     {
-        void ShowDialog(Model model, object parameter);
+        void ShowDialog(MainModel model, object parameter);
     }
 }

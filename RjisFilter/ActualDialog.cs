@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Windows;
+using RjisFilter.Model;
 
 namespace RjisFilter
 {
     class ActualDialog<W, VM> : IDialogService where W : Window, new() where VM : ViewModels.ViewModelBase
     {
-        Func<Model, object, VM> generator;
-        public ActualDialog(Func<Model, object, VM> generator)
+        Func<MainModel, object, VM> generator;
+        public ActualDialog(Func<MainModel, object, VM> generator)
         {
             this.generator = generator;
         }
 
-        public void ShowDialog(Model model, object parameter)
+        public void ShowDialog(MainModel model, object parameter)
         {
             var vm = generator(model, parameter);
             var window = new W()

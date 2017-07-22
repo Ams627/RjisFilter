@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using RjisFilter.Model;
 
 namespace RjisFilter.ViewModels
 {
@@ -25,8 +26,8 @@ namespace RjisFilter.ViewModels
         public ObservableCollection<Station> TocStations { get; set; }
         public ObservableCollection<Station> AllStations { get; set; }
 
-        private readonly Model model;
-        public PerTocViewModel(Model model, object param)
+        private readonly MainModel model;
+        public PerTocViewModel(MainModel model, object param)
         {
             this.model = model;
             Toc = param as string;

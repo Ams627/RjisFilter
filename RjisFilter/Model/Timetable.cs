@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using static System.Net.Mime.MediaTypeNames;
 
-namespace RjisFilter
+namespace RjisFilter.Model
 {
     public class TrainRun
     {
@@ -115,6 +115,7 @@ namespace RjisFilter
             Dictionary<string, List<int>> badTips = new Dictionary<string, List<int>>();
 
             timetableFilenameDict.TryGetValue("mca", out var filename);
+            return;
             if (!string.IsNullOrWhiteSpace(filename))
             {
                 using (var fileStream = File.OpenRead(filename))

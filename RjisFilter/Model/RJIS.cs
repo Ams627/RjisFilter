@@ -10,8 +10,9 @@ using System.IO.Compression;
 using System.Runtime.CompilerServices;
 using System.Windows.Threading;
 using System.Windows;
+using RjisFilter.Model;
 
-namespace RjisFilter
+namespace RjisFilter.Model
 {
     public partial class RJIS : INotifyPropertyChanged
     {
@@ -154,7 +155,7 @@ namespace RjisFilter
                 }
 
 
-                var tasklist = new List<Action> { ProcessClustersFile }; //, ProcessLocationFile, ProcessFlowFile, ProcessNDFFile };
+                var tasklist = new List<Action> { ProcessClustersFile, ProcessLocationFile, ProcessFlowFile, ProcessNDFFile };
                 var tlist = tasklist.Select(t => Task.Run(t));
 
                 var start = DateTime.Now;
@@ -403,20 +404,95 @@ namespace RjisFilter
             str.WriteLine($"/!! Records:       {records}\n/!! Generated:     {date:dd/MM/yyyy}\n/!! Exporter:      Parkeon RJIS Filter");
         }
 
-        void GenerateOutputFFL(string toc, DateTime currentDate)
+        public void GenerateTlv(string toc)
         {
-            var (oktemp, tempFolder) = settings.GetFolder("temp");
-            if (oktemp)
+            var (ok, tlvOutputFolder) = settings.GetFolder("tlv");
+            var outputTocFolder = Path.Combine(tlvOutputFolder, toc);
+            Directory.CreateDirectory(outputTocFolder);
+            if (ok)
             {
-                var outputFfl = Path.Combine(tempFolder, Path.GetFileName(rjisFilenameDict["FFL"]));
+                settings.PerTocNlcList.TryGetValue(toc, out var wantedOrigins);
+                settings.PerTocTicketTypeList.TryGetValue(toc, out var wantedTickets);
+                if (wantedOrigins != null && wantedOrigins.Any())
+                {
+                    // get search stations and clusters for all origins in the entire toc:
+                    var groupList = wantedOrigins.SelectMany(x => DictUtils.GetResults(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
+                    var stationsAndGroupList = groupList.Concat(wantedOrigins);
+                    var clusterList = stationsAndGroupList.SelectMany(x => DictUtils.GetResults(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
+                    var zoneList = wantedOrigins.Select(x => DictUtils.GetResult(StationtToZoneNlc, x)).Where(x => x != string.Empty).GroupBy(x => x).Select(y => y.First());
+                    var allSearchStations = clusterList.Concat(groupList).Concat(zoneList).Concat(wantedOrigins).ToHashSet();
 
+                    var wantedFlowIds = new List<int>();
+
+                    foreach (var flow in FlowList)
+                    {
+                        FlowIdToTicketSet.TryGetValue(flow.FlowId, out var ticketlistForThisFlow);
+                        if (ticketlistForThisFlow != null)
+                        {
+                            var doesFlowContainAnyTickets = (wantedTickets == null || !wantedTickets.Any() || wantedTickets.Intersect(ticketlistForThisFlow).Any());
+                            flow.Wanted = doesFlowContainAnyTickets &&
+                                (allSearchStations.Contains(flow.Origin) ||
+                                (flow.Direction == 'R' && allSearchStations.Contains(flow.Destination)));
+                        }
+                    }
+
+                    foreach (var origin in wantedOrigins)
+                    {
+                        var oset = new List<string> { origin };
+                        var oneStationgroupList = oset.SelectMany(x => DictUtils.GetResults(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
+                        var stationAndGroups = oneStationgroupList.Concat(oset);
+                        var clusters = stationAndGroups.SelectMany(x => DictUtils.GetResults(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
+                        var zones = oset.Select(x => DictUtils.GetResult(StationtToZoneNlc, x)).Where(x => x != string.Empty).GroupBy(x => x).Select(y => y.First());
+                        var fullSearchList = clusters.Concat(oneStationgroupList).Concat(zones).Concat(oset).ToHashSet();
+
+
+                        var fflFile = new ProdFfl();
+                        var filename = Path.Combine(tlvOutputFolder, "PROD_FFL") + $".{origin}";
+
+                        foreach (var flow in FlowList)
+                        {
+                            FlowIdToTicketSet.TryGetValue(flow.FlowId, out var ticketlistForThisFlow);
+                            flow.Wanted &= ticketlistForThisFlow != null && (wantedTickets == null || !wantedTickets.Any() || wantedTickets.Intersect(ticketlistForThisFlow).Any());
+                        }
+
+                        using (var outputStream = new FileStream(filename, FileMode.Create))
+                        {
+                            foreach (var flow in FlowList)
+                            {
+                                if (flow.Wanted && (fullSearchList.Contains(flow.Origin) || (flow.Direction == 'R' && fullSearchList.Contains(flow.Destination))))
+                                {
+                                    TicketDict.TryGetValue(flow.FlowId, out var ticketRecords);
+                                    FlowIdToTicketSet.TryGetValue(flow.FlowId, out var ticketHashSetForThisFlow);
+                                    fflFile.FflProducts.Add(
+                                        new FflProduct
+                                        {
+                                            Orig = flow.Origin,
+                                            Dest = flow.Destination,
+                                            Route = flow.Route,
+                                            EndDate = flow.EndDate,
+                                            StartDate = flow.StartDate,
+                                            Toc = flow.Toc,
+                                            CrossLondonInd = flow.CrossLondonInd,
+                                            NsDiscountInd = flow.DiscountInd,
+                                            FareRecords = ticketRecords.Select(x => new FflFare
+                                            {
+                                                TicketCode = x.TicketCode,
+                                                Price = x.Price,
+                                                RestrictionCode = x.RestrictionCode
+                                            }).Where(x=> ticketHashSetForThisFlow.Contains(x.TicketCode)).ToList()
+                                        });
+                                }
+                            }
+                            byte[] header = new UTF8Encoding(true).GetBytes("TLtV0100");
+                            outputStream.Write(header, 0, header.Length);
+
+                            System.Diagnostics.Debug.WriteLine($"file {filename} serialisation started.");
+                            fflFile.Serialise(outputStream);
+                            System.Diagnostics.Debug.WriteLine($"file {filename} written.");
+                        }
+                    }
+                }
             }
-
-        }
-
-        void GenerateOutputNFO(string toc, DateTime currentDate)
-        {
-
         }
 
         public void GenerateOutputFiles(string toc)

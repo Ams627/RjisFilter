@@ -4,15 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using RjisFilter.Model;
 
 namespace RjisFilter.ViewModels
 {
     class GeneratingViewModel : ViewModelBase
     {
-        private readonly Model model;
+        private readonly MainModel model;
         private readonly object parameter;
 
-        public GeneratingViewModel(Model model, object parameter)
+        public GeneratingViewModel(MainModel model, object parameter)
         {
             this.model = model;
             this.parameter = parameter;

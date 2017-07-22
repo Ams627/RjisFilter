@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using RjisFilter.ViewModels;
+using RjisFilter.Model;
 
 namespace RjisFilter
 {
@@ -47,7 +48,7 @@ namespace RjisFilter
             var timetable = new Timetable(settings, idms);
             try
             {
-                var model = new Model(settings, rjis, idms, timetable, new RouteingGuide());
+                var model = new MainModel(settings, rjis, idms, timetable, new RouteingGuide());
 
                 var tocdialog = new ActualDialog<TocEditor, PerTocViewModel>((a,b)=>new PerTocViewModel(a, b));
 

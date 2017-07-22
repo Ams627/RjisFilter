@@ -6,12 +6,13 @@ using System.Text;
 using System.Threading.Tasks;
 using MvvmFoundation.Wpf;
 using System.Windows;
+using RjisFilter.Model;
 
 namespace RjisFilter
 {
     public class MainWindowViewModel : DependencyObject
     {
-        private readonly Model model;
+        private readonly MainModel model;
         private readonly IDialogService tocDialog;
         private readonly IDialogService generatingDialog;
 
@@ -23,7 +24,7 @@ namespace RjisFilter
 
         public string CurrentToc { get; set; }
 
-        public MainWindowViewModel(Model model, IDialogService tocDialog, IDialogService generatingDialog)
+        public MainWindowViewModel(MainModel model, IDialogService tocDialog, IDialogService generatingDialog)
         {
             this.model = model;
             this.tocDialog = tocDialog;

@@ -56,6 +56,7 @@ namespace RjisFilter
 
         //public Dictionary<string, List<RjisNDF>> NdfList { get; private set; }
 
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         private bool ready = false;
@@ -63,6 +64,10 @@ namespace RjisFilter
 
         public bool Ready { get => ready; set { ready = value; NotifyPropertyChanged(); } }
         public int LinesRead { get => linesRead; set { linesRead = value; NotifyPropertyChanged(); } }
+
+        private int generateCompleted { get; set; } = 0;
+
+        public int GenerateCompleted { get => generateCompleted; set { generateCompleted = value; NotifyPropertyChanged(); } }
 
         private void NotifyPropertyChanged([CallerMemberName] String propertyName = "")
         {
@@ -392,10 +397,34 @@ namespace RjisFilter
             return i;
         }
 
+        void WriteHeader(StreamWriter str, string type, int seq, int records, DateTime date)
+        {
+            str.WriteLine($"/!! Start of file\n/!! Content type:  {type}\n/!! Sequence:      {seq:D3}");
+            str.WriteLine($"/!! Records:       {records}\n/!! Generated:     {date:dd/MM/yyyy}\n/!! Exporter:      Parkeon RJIS Filter");
+        }
+
+        void GenerateOutputFFL(string toc, DateTime currentDate)
+        {
+            var (oktemp, tempFolder) = settings.GetFolder("temp");
+            if (oktemp)
+            {
+                var outputFfl = Path.Combine(tempFolder, Path.GetFileName(rjisFilenameDict["FFL"]));
+
+            }
+
+        }
+
+        void GenerateOutputNFO(string toc, DateTime currentDate)
+        {
+
+        }
+
         public void GenerateOutputFiles(string toc)
         {
+            var currentDate = DateTime.Now;
             var (ok, outputFolder) = settings.GetFolder("output");
-            Directory.CreateDirectory(outputFolder);
+            var outputTocFolder = Path.Combine(outputFolder, toc);
+            Directory.CreateDirectory(outputTocFolder);
             if (ok)
             {
                 var (oktemp, tempFolder) = settings.GetFolder("temp");
@@ -403,7 +432,7 @@ namespace RjisFilter
                 {
                     var outputFfl = Path.Combine(tempFolder, Path.GetFileName(rjisFilenameDict["FFL"]));
                     var outputNFO = Path.Combine(tempFolder, Path.GetFileName(rjisFilenameDict["NFO"]));
-                    var outputZip = Path.Combine(outputFolder, $"RJFAF{GetRJISFilenameSerialNumber(outputNFO):D3}.zip");
+                    var outputZip = Path.Combine(outputTocFolder, $"RJFAF{GetRJISFilenameSerialNumber(outputNFO):D3}.zip");
                     settings.PerTocNlcList.TryGetValue(toc, out var wantedOrigins);
                     settings.PerTocTicketTypeList.TryGetValue(toc, out var wantedTickets);
                     if (wantedOrigins != null && wantedOrigins.Any())
@@ -414,51 +443,101 @@ namespace RjisFilter
                         var zoneList = wantedOrigins.Select(x => DictUtils.GetResult(StationtToZoneNlc, x)).Where(x => x != string.Empty).GroupBy(x => x).Select(y => y.First());
                         var allSearchStations = clusterList.Concat(groupList).Concat(zoneList).Concat(wantedOrigins).ToHashSet();
 
-                        var outputFlowDictionary = new Dictionary<string, List<RJISFlowValue>>();
                         var wantedFlowIds = new List<int>();
+
+                        // count and mark all wanted F records - we count them first as we need to write the number of records we are
+                        // going to output at the start of the file:
+                        var numberOfWantedRecords = 0;
+                        foreach (var flow in FlowList)
+                        {
+                            FlowIdToTicketSet.TryGetValue(flow.FlowId, out var ticketlistForThisFlow);
+                            if (ticketlistForThisFlow != null)
+                            {
+                                var doesFlowContainAnyTickets = (wantedTickets == null || !wantedTickets.Any() || wantedTickets.Intersect(ticketlistForThisFlow).Any());
+                                flow.Wanted = doesFlowContainAnyTickets && 
+                                    (allSearchStations.Contains(flow.Origin) ||
+                                    (flow.Direction == 'R' && allSearchStations.Contains(flow.Destination)));
+                                if (flow.Wanted)
+                                {
+                                    wantedFlowIds.Add(flow.FlowId);
+                                    numberOfWantedRecords++;
+                                }
+                            }
+                        }
+
+                        Application.Current.Dispatcher.Invoke(() => GenerateCompleted = 20);
+
+                        // count all T records:
+                        foreach (var id in wantedFlowIds)
+                        {
+                            TicketDict.TryGetValue(id, out var ticketlist);
+                            if (ticketlist == null)
+                            {
+                                throw new Exception($"list of tickets for flow id {id} was not found in the ticket dictionary.");
+                            }
+                            numberOfWantedRecords += ticketlist.Where(x => wantedTickets.Contains(x.TicketCode)).Count();
+                        }
+
+                        Application.Current.Dispatcher.Invoke(() => GenerateCompleted = 30);
 
                         // write new flow file:
                         using (var outputStream = new StreamWriter(outputFfl))
                         {
-                            // write all F records:
+                            // write file header including total number of records (F + T):
+                            WriteHeader(outputStream, "FFL", GetRJISFilenameSerialNumber(outputFfl), numberOfWantedRecords, currentDate);
+
+                            // write all F records to output file:
                             foreach (var flow in FlowList)
                             {
-                                FlowIdToTicketSet.TryGetValue(flow.FlowId, out var ticketlistForThisFlow);
-                                if (ticketlistForThisFlow != null)
+                                if (flow.Wanted)
                                 {
-                                    var doesFlowContainAnyTickets = (wantedTickets == null || !wantedTickets.Any() || wantedTickets.Intersect(ticketlistForThisFlow).Any());
-                                    if (doesFlowContainAnyTickets && (allSearchStations.Contains(flow.Origin) || (flow.Direction == 'R' && allSearchStations.Contains(flow.Destination))))
-                                    {
-                                        outputStream.WriteLine(flow);
-                                    }
-                                    wantedFlowIds.Add(flow.FlowId);
+                                    outputStream.WriteLine($"{flow}");
                                 }
                             }
+
+                            Application.Current.Dispatcher.Invoke(() => GenerateCompleted = 40);
 
                             // write all T records:
                             foreach (var id in wantedFlowIds)
                             {
                                 TicketDict.TryGetValue(id, out var ticketlist);
-                                if (ticketlist == null)
-                                {
-                                    throw new Exception($"list of tickets for flow id {id} was not found in the ticket dictionary.");
-                                }
                                 ticketlist.Where(x=>wantedTickets.Contains(x.TicketCode)).ToList().ForEach(x =>  outputStream.WriteLine($"RT{id:D7}{x.TicketCode}{x.Price:D8}{x.RestrictionCode}"));
+                            }
+                            // footer:
+                            outputStream.WriteLine($"/!! End of file ({currentDate:dd/MM/yyyy})");
+                        }
+
+                        Application.Current.Dispatcher.Invoke(() => GenerateCompleted = 50);
+
+                        // count wanted NFOs (we need the count for the header)
+                        var allSearchStationsNDF = wantedOrigins.Concat(groupList).Concat(zoneList).ToHashSet();
+                        var numberOfNdfs = 0;
+                        foreach (var ndf in NdfList)
+                        {
+                            ndf.Wanted = allSearchStationsNDF.Contains(ndf.Origin) && wantedTickets.Contains(ndf.TicketCode);
+                            if (ndf.Wanted)
+                            {
+                                numberOfNdfs++;
                             }
                         }
 
-                        // write new nfo file:
-                        var allSearchStationsNDF = wantedOrigins.Concat(groupList).Concat(zoneList);
+                        Application.Current.Dispatcher.Invoke(() => GenerateCompleted = 75);
+
+                        // write wanted NFOs to output file:
                         using (var outputStream = new StreamWriter(outputNFO))
                         {
+                            WriteHeader(outputStream, "NFO", GetRJISFilenameSerialNumber(outputNFO), numberOfNdfs, currentDate);
                             foreach (var ndf in NdfList)
                             {
-                                if (allSearchStationsNDF.Contains(ndf.Origin) && wantedTickets.Contains(ndf.TicketCode))
+                                if (ndf.Wanted)
                                 {
                                     outputStream.WriteLine(ndf);
                                 }
                             }
+                            outputStream.WriteLine($"/!! End of file ({currentDate:dd/MM/yyyy})");
                         }
+
+                        Application.Current.Dispatcher.Invoke(() => GenerateCompleted = 90);
 
                         var extensionList = new List<string> {
                             "DAT",  "DIS",  "FNS",  "FRR",  "FSC",  "LOC",  "RCM",  "RLC",  "RST",  "RTE",
@@ -475,6 +554,8 @@ namespace RjisFilter
                             archive.CreateEntryFromFile(outputFfl, Path.GetFileName(outputFfl));
                             archive.CreateEntryFromFile(outputNFO, Path.GetFileName(outputNFO));
                         }
+
+                        Application.Current.Dispatcher.Invoke(() => GenerateCompleted = 100);
                     }
                 }
             }

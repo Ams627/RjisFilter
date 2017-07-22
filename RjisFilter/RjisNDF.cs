@@ -17,7 +17,7 @@ namespace RjisFilter
         public string RestrictionCode { get; set; }
         public char CrossLondon { get; set; }
         public char PrivateInd { get; set; }
-
+        public bool Wanted { get; set; }
         public override string ToString()
         {
             return $"R{Origin}{Destination}{Route}{Railcard}{TicketCode}Y{EndDate:ddMMyyyy}{StartDate:ddMMyyyy}{QuoteDate:ddMMyyyy}N{AdultFare:D8}{ChildFare:D8}{RestrictionCode}Y{CrossLondon}{PrivateInd}";

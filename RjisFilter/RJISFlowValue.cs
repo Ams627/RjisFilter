@@ -45,6 +45,7 @@ namespace RjisFilter
         public char PubInd { get; set; }
         public int DiscountInd { get; private set; }
         public int FlowId { get; private set; }
+        public bool Wanted { get; set; }
 
         public override string ToString()
         {

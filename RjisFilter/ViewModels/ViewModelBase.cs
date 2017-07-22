@@ -1,6 +1,8 @@
-﻿namespace RjisFilter.ViewModels
+﻿using System.Windows;
+
+namespace RjisFilter.ViewModels
 {
-    class ViewModelBase
+    class ViewModelBase : DependencyObject
     {
         public object Parameter { get; set; }
     }

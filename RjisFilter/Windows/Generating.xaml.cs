@@ -22,6 +22,12 @@ namespace RjisFilter.Windows
         public Generating()
         {
             InitializeComponent();
+            this.PreviewKeyDown += ((s, e) => { if ((Keyboard.IsKeyDown(Key.LeftAlt) || Keyboard.IsKeyDown(Key.RightAlt)) && Keyboard.IsKeyDown(Key.F4))
+                    e.Handled = true;
+            });
+
+            this.MouseLeftButtonDown += (s, e) => DragMove();
+
         }
     }
 }

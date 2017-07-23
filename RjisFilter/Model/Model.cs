@@ -23,11 +23,10 @@ namespace RjisFilter.Model
             RouteingGuide = routeingGuide;
         }
 
-        public void Generate(string toc)
+        public void GenerateFilteredSet(string toc)
         {
             var actions = new List<Action<string>> {
-                //Rjis.GenerateOutputFiles,
-                Rjis.GenerateTlv
+                Rjis.GenerateOutputFiles,
             };
             foreach (var action in actions)
             {

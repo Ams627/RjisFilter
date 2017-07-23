@@ -49,6 +49,11 @@ namespace RjisFilter.Model
         public Dictionary<string, SortedSet<string>> PerTocNlcList { get; private set; }
         public Dictionary<string, HashSet<string>> PerTocTicketTypeList { get; private set; }
         public Dictionary<string, HashSet<string>> PerTocRouteList { get; private set; }
+
+        /// <summary>
+        /// produce NDF for the toc if this is enabled (last record from the NFO is always copied):
+        /// </summary>
+        public Dictionary<string, bool> PerTocNdf { get; private set; }
         public List<string> Warnings { get; private set; } = new List<string>();
 
         static Settings()
@@ -209,6 +214,8 @@ namespace RjisFilter.Model
             PerTocRouteList = validStationSets.ToDictionary(
                 x => x.Attribute("Name").Value,
                 x => x.Descendants("Route").Where(e => e.Attribute("Code") != null).Select(e => e.Attribute("Code").Value).ToHashSet(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
+
+            PerTocNdf = validStationSets.Select(x => new { Name = x.Attribute("Name").Value, UseNDF = x.Attribute("Ndf")?.Value == "1" }).ToDictionary(x => x.Name, x => x.UseNDF);
 
             var (ok, logFolder) = GetFolder("log");
             if (!ok)

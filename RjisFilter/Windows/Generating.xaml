@@ -6,18 +6,44 @@
         xmlns:local="clr-namespace:RjisFilter.Windows"
         xmlns:local2="clr-namespace:RjisFilter"
         mc:Ignorable="d"
-        Title="Generating" Height="300" Width="300">
+        WindowStyle="None"
+        WindowStartupLocation="CenterOwner"
+        Height="140" Width="300">
     <Grid>
-        <StackPanel Margin="10">
-            <TextBlock>Generating filtered RJIS set</TextBlock>
-            <ProgressBar Height="20" Margin="10" Minimum="0" Maximum="100" Value="{Binding Completed}" />
-            <Button Content="Ok" Padding="5,0,5,0" HorizontalAlignment="Center" >
+        <StackPanel Margin="10,11,9.6,-1.4">
+            <TextBlock>Generating filtered RJIS set...</TextBlock>
+            <TextBlock Margin="20,0,0,0" Text="Waiting for RJIS data to be read">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsRjisReady}" Value="true">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+                <ProgressBar Height="20"  Minimum="0" Maximum="100" Value="{Binding Completed}" MinWidth="220"/>
+                <Button Content="Show in folder" Cursor="Hand" TextBlock.Foreground="#3367D6" HorizontalAlignment="Left" VerticalAlignment="Top" Background="Transparent" BorderThickness="0" BorderBrush="Transparent" Command="{Binding ShowInFolder}">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Completed}" Value="100">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            <Button Margin="0,10,0,0" Padding="20,0,20,0" MinWidth="100" MinHeight="22" HorizontalAlignment="Center" Command="{Binding GeneratingOkCancel}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type Window}}}" >
                 <Button.Style>
                     <Style TargetType="Button">
-                        <Setter Property="IsEnabled" Value="False"/>
+                        <Setter Property="Content" Value="Cancel"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding Completed}" Value="100">
-                                <Setter Property="IsEnabled" Value="True"/>
+                                <Setter Property="Content" Value="OK" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>

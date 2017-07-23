@@ -20,7 +20,7 @@ namespace RjisFilter
 
         public RelayCommand<string> ShowTocCommand { get; set; }
         public RelayCommand<string> GenerateFilteredSetCommand { get; set; }
-
+        public RelayCommand<string> GenerateTLVCommand { get; set; }
 
         public string CurrentToc { get; set; }
 
@@ -44,7 +44,7 @@ namespace RjisFilter
             GenerateFilteredSetCommand = new RelayCommand<string>((toc) => {
                 if (!string.IsNullOrWhiteSpace(toc))
                 {
-                    model.Generate(toc);
+                    model.GenerateFilteredSet(toc);
                     generatingDialog.ShowDialog(model, toc);
                 }
             });

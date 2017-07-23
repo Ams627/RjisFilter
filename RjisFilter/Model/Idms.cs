@@ -19,14 +19,15 @@ namespace RjisFilter.Model
             public List<string> Tiploc { get; set; }
         }
 
-        private static string IdmsFareLocationsName = "FareLocationsRefData.xml";
-        private static string IdmsStationsFileName = "StationsRefData.xml";
+        private static string idmsFareLocationsName = "FareLocationsRefData.xml";
+        private static string idmsStationsFileName = "StationsRefData.xml";
         private Settings settings;
 
         private Dictionary<string, string> nlcToFarelocName;
         private Dictionary<string, string> nlcToStationName;
-        private Dictionary<string, string> crsToNlc;
+        // private Dictionary<string, string> crsToNlc;
         private Dictionary<string, Dictionary<string, List<string>>> nlcToCrsToTiploc;
+        // private Dictionary<string, string> ticketTypeToDescription;
 
         private Dictionary<string, string> tiplocToCrs;
 
@@ -61,15 +62,13 @@ namespace RjisFilter.Model
                     Ready = true;
 
                 });
-
             }
         }
 
         private void ProcessFareLocations()
         {
-
             System.Diagnostics.Debug.WriteLine($"IDMS folder {idmsFolder}");
-            var locFilename = Path.Combine(idmsFolder, IdmsFareLocationsName);
+            var locFilename = Path.Combine(idmsFolder, idmsFareLocationsName);
             if (!File.Exists(locFilename))
             {
                 throw new Exception($"IDMS fare location file not found: {locFilename}");
@@ -85,9 +84,16 @@ namespace RjisFilter.Model
                                 }).ToDictionary(x => x.Nlc, x => x.Name);
         }
 
-        private void ProcessStations()
+        private void ProcessTicketTypes()
         {
-            var stationFilename = Path.Combine(idmsFolder, IdmsStationsFileName);
+            System.Diagnostics.Debug.WriteLine($"IDMS folder {idmsFolder}");
+            var locFilename = Path.Combine(idmsFolder, idmsFareLocationsName);
+        }
+
+
+            private void ProcessStations()
+        {
+            var stationFilename = Path.Combine(idmsFolder, idmsStationsFileName);
             if (!File.Exists(stationFilename))
             {
                 throw new Exception($"IDMS station file not found: {stationFilename}");
@@ -141,12 +147,9 @@ namespace RjisFilter.Model
 
             //var multiCRS = nlcToStationName.Where(x => x.Value.Crs.Count() > 1).ToList();
 
-
-
             nlcToStationName = validStationElements.GroupBy(x => x.Element("Nlc").Value)
                 .ToDictionary(x => x.Key, x => x.Elements("Name").First().Value);
         }
-
 
         public string GetNameFromNlc(string nlc)
         {

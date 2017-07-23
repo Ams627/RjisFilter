@@ -8,7 +8,10 @@
         Title="RJIS Filter" Height="350" Width="525">
     <Grid>
         <StackPanel Margin="10,0,10,0">
-            <ListView x:Name="TocListView" Margin="0,10,0,10" ItemsSource="{Binding Tocs}">
+            <ListView x:Name="TocListView" Margin="0,10,0,10" ItemsSource="{Binding Tocs}" SelectedIndex="0">
+                <ListView.Resources>
+                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="Red"/>
+                </ListView.Resources>
                 <ListView.ItemTemplate>
                     <DataTemplate>
                         <TextBlock HorizontalAlignment="Stretch">
@@ -41,6 +44,11 @@
             <Button Margin="0,10,0,0" HorizontalAlignment="Center"
                     Content="Produced Filtered RJIS Set"
                     Command="{Binding GenerateFilteredSetCommand}"
+                    CommandParameter="{Binding ElementName=TocListView, Path=SelectedItem}"
+                    />
+            <Button Margin="0,10,0,0" HorizontalAlignment="Center"
+                    Content="Produced TLVs (PROD_FFL etc)"
+                    Command="{Binding GenerateTLVCommand}"
                     CommandParameter="{Binding ElementName=TocListView, Path=SelectedItem}"
                     />
             <TextBlock>

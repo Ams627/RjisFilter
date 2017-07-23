@@ -311,9 +311,9 @@ namespace RjisFilter.Model
         {
             try
             {
-                var rjisFlowFile = rjisFilenameDict["NFO"];
+                var rjisNfoFile = rjisFilenameDict["NFO"];
 
-                using (var reader = new StreamReader(rjisFlowFile))
+                using (var reader = new StreamReader(rjisNfoFile))
                 {
                     NdfList = new List<RjisNDF>();
                     var linenumber = 0;
@@ -629,6 +629,26 @@ namespace RjisFilter.Model
                             }
                             archive.CreateEntryFromFile(outputFfl, Path.GetFileName(outputFfl));
                             archive.CreateEntryFromFile(outputNFO, Path.GetFileName(outputNFO));
+                        }
+
+                        // if NDFs are set for the TOC, write a single NDF for the TOC - this goes into a separate zip
+                        settings.PerTocNdf.TryGetValue(toc, out var writeNdf);
+                        if (writeNdf)
+                        {
+                            var outputNdf = Path.Combine(tempFolder, $"RJFAF{GetRJISFilenameSerialNumber(outputNFO):D3}.NDF");
+                            string ndf = NdfList.Any() ? NdfList.Last().ToString() : "RN770999801004   SLDN010720170201201705122016N00006750000033756JYNN";
+                            using (var outputStream = new StreamWriter(outputNdf))
+                            {
+                                WriteHeader(outputStream, "NDF", GetRJISFilenameSerialNumber(outputNFO), 1, currentDate);
+                                outputStream.WriteLine(ndf);
+                            }
+
+                            var ndfZipName = Path.Combine(outputTocFolder, $"NDF_{currentDate:MMMyyyy}.ZIP".ToUpper());
+                            using (FileStream zipfile = new FileStream(ndfZipName, FileMode.Create))
+                            using (ZipArchive archive = new ZipArchive(zipfile, ZipArchiveMode.Create))
+                            {
+                                archive.CreateEntryFromFile(outputNdf, Path.GetFileName(outputNdf));
+                            }
                         }
 
                         Application.Current.Dispatcher.Invoke(() => GenerateCompleted = 100);

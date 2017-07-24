@@ -163,7 +163,7 @@ namespace RjisFilter.Model
         {
             Debug.Assert(!string.IsNullOrWhiteSpace(nlc) && nlc.Length == 4);
             var tryResult = nlcToCrsToTiploc.TryGetValue(nlc, out var crsToTiploc);
-            var result = tryResult ? string.Join(", ", crsToTiploc.Keys) : "STATION CRS NOT FOUND";
+            var result = tryResult ? string.Join(", ", crsToTiploc.Keys) : "-";
             return result;
         }
 

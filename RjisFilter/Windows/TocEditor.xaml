@@ -12,7 +12,7 @@
         <StackPanel Orientation="Horizontal">
             <DockPanel Background="Beige">
                 <TextBlock DockPanel.Dock="Top" Text="All Stations" HorizontalAlignment="Center"/>
-                <DataGrid DockPanel.Dock="Bottom" AutoGenerateColumns="False" IsReadOnly="True" HorizontalAlignment="Left" MinHeight="100" MinColumnWidth="50" Width="400" ItemsSource="{Binding AllStations}" >
+                <DataGrid x:Name="allStationsGrid" DockPanel.Dock="Bottom" AutoGenerateColumns="False" IsReadOnly="True" HorizontalAlignment="Left" MinHeight="100" MinColumnWidth="50" Width="400" ItemsSource="{Binding AllStations}" >
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="NLC" Binding="{Binding Nlc}" Width="2*" />
                         <DataGridTextColumn Header="CRS" Binding="{Binding Crs}" Width="1*"/>

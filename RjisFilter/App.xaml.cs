@@ -44,6 +44,7 @@ namespace RjisFilter
             {
                 Thread.Sleep(10);
             }
+            new TocRepository(idms, "fred", true);
             var rjis = new RJIS(settings);
             var timetable = new Timetable(settings, idms);
             try

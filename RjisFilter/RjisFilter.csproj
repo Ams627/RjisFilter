@@ -78,6 +78,8 @@
     <Compile Include="Model\Tlv\FflFare.cs" />
     <Compile Include="Model\Tlv\FflProduct.cs" />
     <Compile Include="Model\Tlv\ProdFfl.cs" />
+    <Compile Include="Model\TocRepository.cs" />
+    <Compile Include="Model\User32Interop.cs" />
     <Compile Include="ViewModels\GeneratingViewModel.cs" />
     <Compile Include="IDialogService.cs" />
     <Compile Include="Model\Idms.cs" />

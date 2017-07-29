@@ -416,9 +416,9 @@ namespace RjisFilter.Model
                 if (wantedOrigins != null && wantedOrigins.Any())
                 {
                     // get search stations and clusters for all origins in the entire toc:
-                    var groupList = wantedOrigins.SelectMany(x => DictUtils.GetResults(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
+                    var groupList = wantedOrigins.SelectMany(x => DictUtils.GetCollectionOrEmpty(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
                     var stationsAndGroupList = groupList.Concat(wantedOrigins);
-                    var clusterList = stationsAndGroupList.SelectMany(x => DictUtils.GetResults(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
+                    var clusterList = stationsAndGroupList.SelectMany(x => DictUtils.GetCollectionOrEmpty(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
                     var zoneList = wantedOrigins.Select(x => DictUtils.GetResult(StationtToZoneNlc, x)).Where(x => x != string.Empty).GroupBy(x => x).Select(y => y.First());
                     var allSearchStations = clusterList.Concat(groupList).Concat(zoneList).Concat(wantedOrigins).ToHashSet();
 
@@ -439,9 +439,9 @@ namespace RjisFilter.Model
                     foreach (var origin in wantedOrigins)
                     {
                         var oset = new List<string> { origin };
-                        var oneStationgroupList = oset.SelectMany(x => DictUtils.GetResults(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
+                        var oneStationgroupList = oset.SelectMany(x => DictUtils.GetCollectionOrEmpty(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
                         var stationAndGroups = oneStationgroupList.Concat(oset);
-                        var clusters = stationAndGroups.SelectMany(x => DictUtils.GetResults(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
+                        var clusters = stationAndGroups.SelectMany(x => DictUtils.GetCollectionOrEmpty(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
                         var zones = oset.Select(x => DictUtils.GetResult(StationtToZoneNlc, x)).Where(x => x != string.Empty).GroupBy(x => x).Select(y => y.First());
                         var fullSearchList = clusters.Concat(oneStationgroupList).Concat(zones).Concat(oset).ToHashSet();
 
@@ -513,9 +513,9 @@ namespace RjisFilter.Model
                     settings.PerTocTicketTypeList.TryGetValue(toc, out var wantedTickets);
                     if (wantedOrigins != null && wantedOrigins.Any())
                     {
-                        var groupList = wantedOrigins.SelectMany(x => DictUtils.GetResults(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
+                        var groupList = wantedOrigins.SelectMany(x => DictUtils.GetCollectionOrEmpty(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
                         var stationsAndGroupList = groupList.Concat(wantedOrigins);
-                        var clusterList = stationsAndGroupList.SelectMany(x => DictUtils.GetResults(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
+                        var clusterList = stationsAndGroupList.SelectMany(x => DictUtils.GetCollectionOrEmpty(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
                         var zoneList = wantedOrigins.Select(x => DictUtils.GetResult(StationtToZoneNlc, x)).Where(x => x != string.Empty).GroupBy(x => x).Select(y => y.First());
                         var allSearchStations = clusterList.Concat(groupList).Concat(zoneList).Concat(wantedOrigins).ToHashSet();
 

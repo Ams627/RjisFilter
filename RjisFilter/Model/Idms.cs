@@ -27,6 +27,9 @@ namespace RjisFilter.Model
         private Dictionary<string, string> nlcToStationName;
         // private Dictionary<string, string> crsToNlc;
         private Dictionary<string, Dictionary<string, List<string>>> nlcToCrsToTiploc;
+
+        // given a CRS, get an NLC:
+        private Dictionary<string, string> crsToNlc;
         // private Dictionary<string, string> ticketTypeToDescription;
 
         private Dictionary<string, string> tiplocToCrs;
@@ -56,11 +59,14 @@ namespace RjisFilter.Model
                                 select new
                                 {
                                     crs,
+                                    nlc=entry.Key,
                                     key = entry.Key
                                 }).ToLookup(x => x.crs);
-                    var b = acrsToNlc.Where(x => x.Count() > 1);
-                    Ready = true;
+                    var multiMapping = acrsToNlc.Where(x => x.Count() > 1).Select(x=>x.Key);
+                    multiMapping.ToList().ForEach(x=>Warnings.Add($"More than one NLC for crs {x}"));
 
+                    crsToNlc = acrsToNlc.ToDictionary(x=>x.Key, x=>x.First().nlc);
+                    Ready = true;
                 });
             }
         }
@@ -166,6 +172,13 @@ namespace RjisFilter.Model
             var result = tryResult ? string.Join(", ", crsToTiploc.Keys) : "-";
             return result;
         }
+        public string GetNlcFromCrs(string crs)
+        {
+            Debug.Assert(!string.IsNullOrWhiteSpace(crs) && crs.Length == 3);
+            var tryResult = crsToNlc.TryGetValue(crs, out var nlc);
+            return nlc;
+        }
+
 
         public string GetCrsFromTiploc(string crs)
         {

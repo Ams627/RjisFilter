@@ -30,7 +30,7 @@ namespace RjisFilter
             this.tocDialog = tocDialog;
             this.generatingDialog = generatingDialog;
             CurrentToc = model.Settings.PerTocNlcList.First().Key;
-            Tocs = new ObservableCollection<string>(model.Settings.PerTocNlcList.Keys);
+            Tocs = new ObservableCollection<string>(model.TocRepository.GetTocs());
             //ShowTocCommand = new RelayCommand<string>((toc) => {
             //    CurrentToc = toc;
             //    TocStations = new ObservableCollection<Station>(model.Settings.PerTocNlcList[toc].Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
@@ -49,9 +49,7 @@ namespace RjisFilter
                 }
             });
 
-
             model.Rjis.PropertyChanged += Rjis_PropertyChanged;
-
         }
 
 

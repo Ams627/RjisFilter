@@ -138,7 +138,6 @@ namespace RjisFilter.Model
                 var li = attribute as IXmlLineInfo;
                 Warnings.Add($"attribute name {attribute.Name.LocalName} does not meet schema rules (must start with upper case) at line {li.LineNumber}");
             }
-
         }
 
 

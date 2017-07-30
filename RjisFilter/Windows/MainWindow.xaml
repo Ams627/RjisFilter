@@ -8,7 +8,7 @@
         Title="RJIS Filter" Height="350" Width="525">
     <Grid>
         <StackPanel Margin="10,0,10,0">
-            <ListView x:Name="TocListView" Margin="0,10,0,10" ItemsSource="{Binding Tocs}" SelectedIndex="0">
+            <ListView x:Name="TocListView" Margin="0,10,0,10" ItemsSource="{Binding Tocs}" SelectedIndex="0" MinHeight="30">
                 <ListView.Resources>
                     <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="Red"/>
                 </ListView.Resources>

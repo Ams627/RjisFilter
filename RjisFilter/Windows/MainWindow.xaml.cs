@@ -22,6 +22,11 @@ namespace RjisFilter
     {
         public MainWindow(MainWindowViewModel vm)
         {
+            this.Loaded += (s, e) =>
+            {
+                var adornerLayer = AdornerLayer.GetAdornerLayer(TocListView);
+                adornerLayer.Add(new NoTocsAdorner(TocListView));
+            };
             this.DataContext = vm;
             InitializeComponent();
         }

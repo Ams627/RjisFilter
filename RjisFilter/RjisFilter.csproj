@@ -110,6 +110,7 @@
     <Compile Include="Windows\Generating.xaml.cs">
       <DependentUpon>Generating.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Windows\NoTocsAdorner.cs" />
     <Compile Include="Windows\TocEditor.xaml.cs">
       <DependentUpon>TocEditor.xaml</DependentUpon>
     </Compile>

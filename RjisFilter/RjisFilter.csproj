@@ -78,6 +78,8 @@
     <Compile Include="Model\Tlv\FflFare.cs" />
     <Compile Include="Model\Tlv\FflProduct.cs" />
     <Compile Include="Model\Tlv\ProdFfl.cs" />
+    <Compile Include="Model\TocRepository.cs" />
+    <Compile Include="Model\User32Interop.cs" />
     <Compile Include="ViewModels\GeneratingViewModel.cs" />
     <Compile Include="IDialogService.cs" />
     <Compile Include="Model\Idms.cs" />
@@ -167,6 +169,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\explorer.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

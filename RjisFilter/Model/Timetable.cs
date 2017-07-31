@@ -71,7 +71,7 @@ namespace RjisFilter.Model
                     timetableFilenameDict = rjisLookup.ToDictionary(x => x.Key, x => x.First());
                 }
 
-                var tasklist = new List<Action> { ProcessMcaFile };
+                var tasklist = new List<Action> { };//ProcessMcaFile };
                 var tlist = tasklist.Select(t => Task.Run(t));
 
                 var start = DateTime.Now;
@@ -115,7 +115,6 @@ namespace RjisFilter.Model
             Dictionary<string, List<int>> badTips = new Dictionary<string, List<int>>();
 
             timetableFilenameDict.TryGetValue("mca", out var filename);
-            return;
             if (!string.IsNullOrWhiteSpace(filename))
             {
                 using (var fileStream = File.OpenRead(filename))
@@ -204,8 +203,6 @@ namespace RjisFilter.Model
                         }
                     }
                 } // using
-
-                
 
                 connections = new Dictionary<string, List<Connection>>();
 

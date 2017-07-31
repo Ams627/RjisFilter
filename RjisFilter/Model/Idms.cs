@@ -19,14 +19,18 @@ namespace RjisFilter.Model
             public List<string> Tiploc { get; set; }
         }
 
-        private static string IdmsFareLocationsName = "FareLocationsRefData.xml";
-        private static string IdmsStationsFileName = "StationsRefData.xml";
+        private static string idmsFareLocationsName = "FareLocationsRefData.xml";
+        private static string idmsStationsFileName = "StationsRefData.xml";
         private Settings settings;
 
         private Dictionary<string, string> nlcToFarelocName;
         private Dictionary<string, string> nlcToStationName;
-        private Dictionary<string, string> crsToNlc;
+        // private Dictionary<string, string> crsToNlc;
         private Dictionary<string, Dictionary<string, List<string>>> nlcToCrsToTiploc;
+
+        // given a CRS, get an NLC:
+        private Dictionary<string, string> crsToNlc;
+        // private Dictionary<string, string> ticketTypeToDescription;
 
         private Dictionary<string, string> tiplocToCrs;
 
@@ -55,21 +59,22 @@ namespace RjisFilter.Model
                                 select new
                                 {
                                     crs,
+                                    nlc=entry.Key,
                                     key = entry.Key
                                 }).ToLookup(x => x.crs);
-                    var b = acrsToNlc.Where(x => x.Count() > 1);
+                    var multiMapping = acrsToNlc.Where(x => x.Count() > 1).Select(x=>x.Key);
+                    multiMapping.ToList().ForEach(x=>Warnings.Add($"More than one NLC for crs {x}"));
+
+                    crsToNlc = acrsToNlc.ToDictionary(x=>x.Key, x=>x.First().nlc);
                     Ready = true;
-
                 });
-
             }
         }
 
         private void ProcessFareLocations()
         {
-
             System.Diagnostics.Debug.WriteLine($"IDMS folder {idmsFolder}");
-            var locFilename = Path.Combine(idmsFolder, IdmsFareLocationsName);
+            var locFilename = Path.Combine(idmsFolder, idmsFareLocationsName);
             if (!File.Exists(locFilename))
             {
                 throw new Exception($"IDMS fare location file not found: {locFilename}");
@@ -85,9 +90,16 @@ namespace RjisFilter.Model
                                 }).ToDictionary(x => x.Nlc, x => x.Name);
         }
 
-        private void ProcessStations()
+        private void ProcessTicketTypes()
         {
-            var stationFilename = Path.Combine(idmsFolder, IdmsStationsFileName);
+            System.Diagnostics.Debug.WriteLine($"IDMS folder {idmsFolder}");
+            var locFilename = Path.Combine(idmsFolder, idmsFareLocationsName);
+        }
+
+
+            private void ProcessStations()
+        {
+            var stationFilename = Path.Combine(idmsFolder, idmsStationsFileName);
             if (!File.Exists(stationFilename))
             {
                 throw new Exception($"IDMS station file not found: {stationFilename}");
@@ -141,12 +153,9 @@ namespace RjisFilter.Model
 
             //var multiCRS = nlcToStationName.Where(x => x.Value.Crs.Count() > 1).ToList();
 
-
-
             nlcToStationName = validStationElements.GroupBy(x => x.Element("Nlc").Value)
                 .ToDictionary(x => x.Key, x => x.Elements("Name").First().Value);
         }
-
 
         public string GetNameFromNlc(string nlc)
         {
@@ -160,9 +169,16 @@ namespace RjisFilter.Model
         {
             Debug.Assert(!string.IsNullOrWhiteSpace(nlc) && nlc.Length == 4);
             var tryResult = nlcToCrsToTiploc.TryGetValue(nlc, out var crsToTiploc);
-            var result = tryResult ? string.Join(", ", crsToTiploc.Keys) : "STATION CRS NOT FOUND";
+            var result = tryResult ? string.Join(", ", crsToTiploc.Keys) : "-";
             return result;
         }
+        public string GetNlcFromCrs(string crs)
+        {
+            Debug.Assert(!string.IsNullOrWhiteSpace(crs) && crs.Length == 3);
+            var tryResult = crsToNlc.TryGetValue(crs, out var nlc);
+            return nlc;
+        }
+
 
         public string GetCrsFromTiploc(string crs)
         {

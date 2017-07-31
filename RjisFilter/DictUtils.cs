@@ -27,11 +27,18 @@ namespace RjisFilter
 
 
 
-        public static IEnumerable<string> GetResults(Dictionary<string, List<string>> dict, string key)
+        public static IEnumerable<string> GetCollectionOrEmpty(Dictionary<string, List<string>> dict, string key)
         {
             dict.TryGetValue(key, out var result);
             return result ?? Enumerable.Empty<string>();
         }
+
+        public static IEnumerable<string> GetCollectionOrEmpty(Dictionary<string, HashSet<string>> dict, string key)
+        {
+            dict.TryGetValue(key, out var result);
+            return result ?? Enumerable.Empty<string>();
+        }
+
 
         public static string GetResult(Dictionary<string, string> dict, string key)
         {

@@ -44,11 +44,12 @@ namespace RjisFilter
             {
                 Thread.Sleep(10);
             }
+            var tocRepository =  new TocRepository(idms, false);
             var rjis = new RJIS(settings);
             var timetable = new Timetable(settings, idms);
             try
             {
-                var model = new MainModel(settings, rjis, idms, timetable, new RouteingGuide());
+                var model = new MainModel(settings, tocRepository, rjis, idms, timetable, new RouteingGuide());
 
                 var tocdialog = new ActualDialog<TocEditor, PerTocViewModel>((a,b)=>new PerTocViewModel(a, b));
 

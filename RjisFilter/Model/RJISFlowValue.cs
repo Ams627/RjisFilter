@@ -27,8 +27,8 @@ namespace RjisFilter.Model
             }
             Direction = line[19];
             Toc = line.Substring(36, 3);
-            CrossLondonInd = Convert.ToInt32(line[39]);
-            DiscountInd = int.Parse(line.Substring(40, 1));
+            CrossLondonInd = line[39] - '0';
+            DiscountInd = line[40] - '0';
             PubInd = line[41];
             FlowId = int.Parse(line.Substring(42, 7));
         }
@@ -49,7 +49,7 @@ namespace RjisFilter.Model
 
         public override string ToString()
         {
-            return $"RF{Origin}{Destination}{Route}000{UsageCode}{Direction}{EndDate:ddMMyyyy}{StartDate:ddMMyyyy}{Toc}{CrossLondonInd}{PubInd}{DiscountInd}{FlowId:D7}";
+            return $"RF{Origin}{Destination}{Route}000{UsageCode}{Direction}{EndDate:ddMMyyyy}{StartDate:ddMMyyyy}{Toc}{CrossLondonInd}{DiscountInd}{PubInd}{FlowId:D7}";
         }
     }
 }

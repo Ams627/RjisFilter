@@ -20,7 +20,7 @@ namespace RjisFilter
 
         public RelayCommand<string> ShowTocCommand { get; set; }
         public RelayCommand<string> GenerateFilteredSetCommand { get; set; }
-
+        public RelayCommand<string> GenerateTLVCommand { get; set; }
 
         public string CurrentToc { get; set; }
 
@@ -30,7 +30,7 @@ namespace RjisFilter
             this.tocDialog = tocDialog;
             this.generatingDialog = generatingDialog;
             CurrentToc = model.Settings.PerTocNlcList.First().Key;
-            Tocs = new ObservableCollection<string>(model.Settings.PerTocNlcList.Keys);
+            Tocs = new ObservableCollection<string>(model.TocRepository.GetTocs());
             //ShowTocCommand = new RelayCommand<string>((toc) => {
             //    CurrentToc = toc;
             //    TocStations = new ObservableCollection<Station>(model.Settings.PerTocNlcList[toc].Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
@@ -44,14 +44,12 @@ namespace RjisFilter
             GenerateFilteredSetCommand = new RelayCommand<string>((toc) => {
                 if (!string.IsNullOrWhiteSpace(toc))
                 {
-                    model.Generate(toc);
+                    model.GenerateFilteredSet(toc);
                     generatingDialog.ShowDialog(model, toc);
                 }
             });
 
-
             model.Rjis.PropertyChanged += Rjis_PropertyChanged;
-
         }
 
 

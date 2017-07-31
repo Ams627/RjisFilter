@@ -5,6 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using RjisFilter.Model;
+using MvvmFoundation.Wpf;
+using System.Diagnostics;
+using System.IO;
 
 namespace RjisFilter.ViewModels
 {
@@ -13,11 +16,40 @@ namespace RjisFilter.ViewModels
         private readonly MainModel model;
         private readonly object parameter;
 
+        public RelayCommand<Window> GeneratingOkCancel { get; set; }
+        public RelayCommand ShowInFolder { get; set; }
+
         public GeneratingViewModel(MainModel model, object parameter)
         {
             this.model = model;
             this.parameter = parameter;
             model.Rjis.PropertyChanged += Rjis_PropertyChanged;
+            GeneratingOkCancel = new RelayCommand<Window>(w => {
+                if (Completed == 100 && w != null)
+                {
+                    w.Close();
+                }
+           });
+
+            ShowInFolder = new RelayCommand(()=>
+            {
+                var (ok, folder) = model.Settings.GetFolder("output");
+
+                if (ok)
+                {
+                    var subfolder = parameter.ToString();
+                    var outputFolder = Path.Combine(folder, subfolder);
+                    if (Directory.Exists(outputFolder))
+                    {
+                        Process.Start(new ProcessStartInfo()
+                        {
+                            FileName = outputFolder,
+                            UseShellExecute = true,
+                            Verb = "open"
+                        });
+                    }
+                }
+            });
         }
 
         private void Rjis_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)

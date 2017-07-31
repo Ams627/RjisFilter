@@ -311,9 +311,9 @@ namespace RjisFilter.Model
         {
             try
             {
-                var rjisFlowFile = rjisFilenameDict["NFO"];
+                var rjisNfoFile = rjisFilenameDict["NFO"];
 
-                using (var reader = new StreamReader(rjisFlowFile))
+                using (var reader = new StreamReader(rjisNfoFile))
                 {
                     NdfList = new List<RjisNDF>();
                     var linenumber = 0;
@@ -416,9 +416,9 @@ namespace RjisFilter.Model
                 if (wantedOrigins != null && wantedOrigins.Any())
                 {
                     // get search stations and clusters for all origins in the entire toc:
-                    var groupList = wantedOrigins.SelectMany(x => DictUtils.GetResults(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
+                    var groupList = wantedOrigins.SelectMany(x => DictUtils.GetCollectionOrEmpty(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
                     var stationsAndGroupList = groupList.Concat(wantedOrigins);
-                    var clusterList = stationsAndGroupList.SelectMany(x => DictUtils.GetResults(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
+                    var clusterList = stationsAndGroupList.SelectMany(x => DictUtils.GetCollectionOrEmpty(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
                     var zoneList = wantedOrigins.Select(x => DictUtils.GetResult(StationtToZoneNlc, x)).Where(x => x != string.Empty).GroupBy(x => x).Select(y => y.First());
                     var allSearchStations = clusterList.Concat(groupList).Concat(zoneList).Concat(wantedOrigins).ToHashSet();
 
@@ -439,9 +439,9 @@ namespace RjisFilter.Model
                     foreach (var origin in wantedOrigins)
                     {
                         var oset = new List<string> { origin };
-                        var oneStationgroupList = oset.SelectMany(x => DictUtils.GetResults(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
+                        var oneStationgroupList = oset.SelectMany(x => DictUtils.GetCollectionOrEmpty(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
                         var stationAndGroups = oneStationgroupList.Concat(oset);
-                        var clusters = stationAndGroups.SelectMany(x => DictUtils.GetResults(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
+                        var clusters = stationAndGroups.SelectMany(x => DictUtils.GetCollectionOrEmpty(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
                         var zones = oset.Select(x => DictUtils.GetResult(StationtToZoneNlc, x)).Where(x => x != string.Empty).GroupBy(x => x).Select(y => y.First());
                         var fullSearchList = clusters.Concat(oneStationgroupList).Concat(zones).Concat(oset).ToHashSet();
 
@@ -513,9 +513,9 @@ namespace RjisFilter.Model
                     settings.PerTocTicketTypeList.TryGetValue(toc, out var wantedTickets);
                     if (wantedOrigins != null && wantedOrigins.Any())
                     {
-                        var groupList = wantedOrigins.SelectMany(x => DictUtils.GetResults(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
+                        var groupList = wantedOrigins.SelectMany(x => DictUtils.GetCollectionOrEmpty(StationToGroupIds, x)).GroupBy(x => x).Select(y => y.First());
                         var stationsAndGroupList = groupList.Concat(wantedOrigins);
-                        var clusterList = stationsAndGroupList.SelectMany(x => DictUtils.GetResults(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
+                        var clusterList = stationsAndGroupList.SelectMany(x => DictUtils.GetCollectionOrEmpty(StationToClusterList, x)).GroupBy(x => x).Select(y => y.First());
                         var zoneList = wantedOrigins.Select(x => DictUtils.GetResult(StationtToZoneNlc, x)).Where(x => x != string.Empty).GroupBy(x => x).Select(y => y.First());
                         var allSearchStations = clusterList.Concat(groupList).Concat(zoneList).Concat(wantedOrigins).ToHashSet();
 
@@ -629,6 +629,26 @@ namespace RjisFilter.Model
                             }
                             archive.CreateEntryFromFile(outputFfl, Path.GetFileName(outputFfl));
                             archive.CreateEntryFromFile(outputNFO, Path.GetFileName(outputNFO));
+                        }
+
+                        // if NDFs are set for the TOC, write a single NDF for the TOC - this goes into a separate zip
+                        settings.PerTocNdf.TryGetValue(toc, out var writeNdf);
+                        if (writeNdf)
+                        {
+                            var outputNdf = Path.Combine(tempFolder, $"RJFAF{GetRJISFilenameSerialNumber(outputNFO):D3}.NDF");
+                            string ndf = NdfList.Any() ? NdfList.Last().ToString() : "RN770999801004   SLDN010720170201201705122016N00006750000033756JYNN";
+                            using (var outputStream = new StreamWriter(outputNdf))
+                            {
+                                WriteHeader(outputStream, "NDF", GetRJISFilenameSerialNumber(outputNFO), 1, currentDate);
+                                outputStream.WriteLine(ndf);
+                            }
+
+                            var ndfZipName = Path.Combine(outputTocFolder, $"NDF_{currentDate:MMMyyyy}.ZIP".ToUpper());
+                            using (FileStream zipfile = new FileStream(ndfZipName, FileMode.Create))
+                            using (ZipArchive archive = new ZipArchive(zipfile, ZipArchiveMode.Create))
+                            {
+                                archive.CreateEntryFromFile(outputNdf, Path.GetFileName(outputNdf));
+                            }
                         }
 
                         Application.Current.Dispatcher.Invoke(() => GenerateCompleted = 100);

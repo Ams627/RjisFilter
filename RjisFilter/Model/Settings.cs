@@ -13,6 +13,8 @@ namespace RjisFilter.Model
     public class Settings
     {
         private static string settingsFile;
+        private static string tocsFile;
+
         public enum SetOptions
         {
             AllStations,
@@ -49,6 +51,11 @@ namespace RjisFilter.Model
         public Dictionary<string, SortedSet<string>> PerTocNlcList { get; private set; }
         public Dictionary<string, HashSet<string>> PerTocTicketTypeList { get; private set; }
         public Dictionary<string, HashSet<string>> PerTocRouteList { get; private set; }
+
+        /// <summary>
+        /// produce NDF for the toc if this is enabled (last record from the NFO is always copied):
+        /// </summary>
+        public Dictionary<string, bool> PerTocNdf { get; private set; }
         public List<string> Warnings { get; private set; } = new List<string>();
 
         static Settings()
@@ -71,6 +78,7 @@ namespace RjisFilter.Model
             // it as an emergency procedure:
             Directory.CreateDirectory(programFolder);
             settingsFile = Path.Combine(programFolder, "settings.xml");
+            tocsFile = Path.Combine(programFolder, "tocs.xml");
             if (!File.Exists(settingsFile))
             {
                 var defaultStations = new Dictionary<string, List<string>>(){ {"Northern",
@@ -107,40 +115,14 @@ namespace RjisFilter.Model
             }
         }
 
-        public Settings()
+        bool GlobalCheck<T>(IEnumerable<T> e, Func<T, bool> F, string warning)
         {
-            // copy static settings file to instance:
-            SettingsFile = settingsFile;
+            e.Where(x => F(x)).ToList().ForEach(y => Console.WriteLine());
+            return true;
+        }
 
-            // LoadOptions.SetLineInfo sets the line number info for the settings file which is used for error reporting:
-            var doc = XDocument.Load(SettingsFile, LoadOptions.SetLineInfo);
-
-            folders = doc.Descendants("Folders").Elements("Folder").Select(folder => new
-            {
-                Name = (string)folder.Attribute("Name"),
-                Location = (string)folder.Attribute("Location")
-            }).ToDictionary(x => x.Name, x => x.Location, StringComparer.OrdinalIgnoreCase);
-
-            foreach (var folder in folders)
-            {
-                if (folder.Value == null)
-                {
-                    throw new Exception($"The location specified for {folder.Key} must not be empty.");
-                }
-            }
-
-            GlobalTicketTypes = new HashSet<string>(doc.Descendants("GlobalTicketTypes").Elements("TicketType").Select(ticketType =>
-                (string)ticketType.Attribute("Code")));
-
-            // check ticket codes are all 3 characters and only upper case letters or digits:
-            foreach (var ticket in GlobalTicketTypes)
-            {
-                if (string.IsNullOrWhiteSpace(ticket) || ticket.Length != 3 || ticket.Any(c=>!char.IsUpper(c) && !char.IsDigit(c)))
-                {
-                    throw new Exception($"Invalid ticket type {ticket} specified.");
-                }
-            }
-
+        void XmlDocumentCheck(XDocument doc)
+        {
             // Check all XML element names are in sentence case:
             var nodes = doc.Descendants().Where(x => x.Name.LocalName.Length > 0 && !char.IsUpper(x.Name.LocalName[0])).Distinct();
             foreach (var node in nodes)
@@ -156,9 +138,58 @@ namespace RjisFilter.Model
                 var li = attribute as IXmlLineInfo;
                 Warnings.Add($"attribute name {attribute.Name.LocalName} does not meet schema rules (must start with upper case) at line {li.LineNumber}");
             }
+        }
+
+
+        public Settings()
+        {
+            // copy static settings file to instance:
+            SettingsFile = settingsFile;
+
+            // LoadOptions.SetLineInfo sets the line number info for the settings file which is used for error reporting:
+            var doc = XDocument.Load(SettingsFile, LoadOptions.SetLineInfo);
+            XmlDocumentCheck(doc);
+
+            folders = doc.Descendants("Folders").Elements("Folder").Select(folder => new
+            {
+                Name = (string)folder.Attribute("Name"),
+                Location = (string)folder.Attribute("Location")
+            }).ToDictionary(x => x.Name, x => x.Location, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var folder in folders)
+            {
+                if (folder.Value == null)
+                {
+                    throw new Exception($"The location specified for {folder.Key} must not be empty.");
+                }
+            }
+
+            LoadTocsFile();
+
+            var (ok, logFolder) = GetFolder("log");
+            if (!ok)
+            {
+                logFolder = Path.Combine(programFolder, "log");
+            }
+        }
+
+        void LoadTocsFile()
+        {
+            var tocDoc = XDocument.Load(tocsFile, LoadOptions.SetLineInfo);
+            XmlDocumentCheck(tocDoc);
+            GlobalTicketTypes = new HashSet<string>(tocDoc.Descendants("GlobalTicketTypes").Elements("TicketType").Select(ticketType =>(string)ticketType.Attribute("Code")));
+
+            // check ticket codes are all 3 characters and only upper case letters or digits:
+            foreach (var ticket in GlobalTicketTypes)
+            {
+                if (string.IsNullOrWhiteSpace(ticket) || ticket.Length != 3 || ticket.Any(c => !char.IsUpper(c) && !char.IsDigit(c)))
+                {
+                    throw new Exception($"Invalid ticket type {ticket} specified.");
+                }
+            }
 
             // Check for stations without Nlc codes:
-            var stations = doc.Descendants("Station").Where(x => x.Attribute("Nlc") == null);
+            var stations = tocDoc.Descendants("Station").Where(x => x.Attribute("Nlc") == null);
             foreach (var invalidStation in stations)
             {
                 var li = invalidStation as IXmlLineInfo;
@@ -166,7 +197,8 @@ namespace RjisFilter.Model
             }
 
             // Check for routes without route codes:
-            var routes = doc.Descendants("Route")?.Where(x => x.Attribute("Code") == null);
+            var routes = tocDoc.Descendants("Route")?.Where(x => x.Attribute("Code") == null);
+
             if (routes != null)
             {
                 foreach (var invalidStation in stations)
@@ -177,7 +209,7 @@ namespace RjisFilter.Model
             }
 
             // check for ticket types without code:
-            var allTicketTypes = doc.Descendants("TicketTypes").Where(x => x.Attribute("Code") == null);
+            var allTicketTypes = tocDoc.Descendants("TicketTypes").Where(x => x.Attribute("Code") == null);
             foreach (var ticket in allTicketTypes)
             {
                 var li = ticket as IXmlLineInfo;
@@ -185,22 +217,16 @@ namespace RjisFilter.Model
             }
 
             // Check all NLC codes are valid:
-            stations = doc.Descendants("Station").Where(x => x.Attribute("Nlc") != null && !Regex.Match(x.Attribute("Nlc").Value, "^[0-9A-Z][0-9A-Z][0-9A-Z][0-9A-Z]$").Success);
+            stations = tocDoc.Descendants("Station").Where(x => x.Attribute("Nlc") != null && !Regex.Match(x.Attribute("Nlc").Value, "^[0-9A-Z][0-9A-Z][0-9A-Z][0-9A-Z]$").Success);
             foreach (var invalidStation in stations)
             {
                 var li = invalidStation as IXmlLineInfo;
                 Warnings.Add($"Warning: <Station> node does not have a valid NLC code at line {li.LineNumber}");
             }
 
-            var validStationSets = doc.Element("Settings").Elements("StationSets").Elements("StationSet").Where(x => x.Attribute("Name") != null);
-            var allUsed = validStationSets.Where(x => x.Attribute("Name").Value.ToLower() == "all");
-            if (allUsed.Count() != 0)
-            {
-                var badname = allUsed.First().Attribute("Name").Value;
-                var li = allUsed.First() as IXmlLineInfo;
-                throw new Exception($"You cannot use \"{badname}\" as the name of a station set (at line {li.LineNumber} in {SettingsFile}) - it is a reserved word.");
-            }
-            PerTocNlcList = validStationSets.ToDictionary(x => x.Attribute("Name").Value, x => x.Descendants("Station").Where(e => e.Attribute("Nlc") != null).Select(e => e.Attribute("Nlc").Value).ToSortedSet(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
+            var validStationSets = tocDoc.Element("TocSettings").Elements("StationSets").Elements("StationSet").Where(x => x.Attribute("Name") != null);
+
+            PerTocNlcList = validStationSets.ToDictionary(x => x.Attribute("Name").Value, x => x.Elements("Station")?.Elements("Station").Where(e => e.Attribute("Nlc") != null).Select(e => e.Attribute("Nlc").Value).ToSortedSet(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
 
             PerTocTicketTypeList = validStationSets.ToDictionary(
                 x => x.Attribute("Name").Value,
@@ -210,12 +236,25 @@ namespace RjisFilter.Model
                 x => x.Attribute("Name").Value,
                 x => x.Descendants("Route").Where(e => e.Attribute("Code") != null).Select(e => e.Attribute("Code").Value).ToHashSet(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
 
-            var (ok, logFolder) = GetFolder("log");
-            if (!ok)
-            {
-                logFolder = Path.Combine(programFolder, "log");
-            }
+            PerTocNdf = validStationSets.Select(x => new { Name = x.Attribute("Name").Value, UseNDF = x.Attribute("Ndf")?.Value == "1" }).ToDictionary(x => x.Name, x => x.UseNDF);
+
         }
+
+        void SaveTocsFile()
+        {
+            var tocDoc = new XDocument(
+                    new XDeclaration("1.0", "utf-8", "no"),
+                    new XElement("TocSettings", new XAttribute("Version", "1.0.0.0"),
+                            from stationSet in PerTocNlcList
+                            select new XElement("StationSet", new XAttribute("Name", stationSet.Key),
+                                new XElement("Stations",
+                                from station in stationSet.Value select
+                                   new XElement("Station", new XAttribute("Nlc", station))),
+                                new XElement("Tickets",
+                                from ticket in DictUtils.GetCollectionOrEmpty(PerTocTicketTypeList, stationSet.Key) select
+                                    new XElement("Ticket", new XAttribute("TicketCode", ticket))))));
+        }
+
 
         public (bool, string) GetFolder(string name)
         {

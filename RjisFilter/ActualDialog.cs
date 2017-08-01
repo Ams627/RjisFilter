@@ -12,16 +12,16 @@ namespace RjisFilter
             this.generator = generator;
         }
 
-        public void ShowDialog(MainModel model, object parameter)
+        public void ShowDialog(MainModel model, object owner, object parameter)
         {
             var vm = generator(model, parameter);
             var window = new W()
             {
                 DataContext = vm,
+                Owner = owner as Window
             };
             window.ShowDialog();
         }
-
-        
+       
     }
 }

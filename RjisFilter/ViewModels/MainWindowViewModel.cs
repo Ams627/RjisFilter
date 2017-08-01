@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using MvvmFoundation.Wpf;
 using System.Windows;
 using RjisFilter.Model;
+using System.Windows.Threading;
 
 namespace RjisFilter
 {
@@ -15,21 +16,23 @@ namespace RjisFilter
         private readonly MainModel model;
         private readonly IDialogService tocDialog;
         private readonly IDialogService generatingDialog;
+        private readonly IDialogService addtocDialog;
 
         public ObservableCollection<string> Tocs { get; set; }
 
-        public RelayCommand<string> ShowTocCommand { get; set; }
+        public RelayCommand<object> ShowTocCommand { get; set; }
         public RelayCommand<string> GenerateFilteredSetCommand { get; set; }
         public RelayCommand<string> GenerateTLVCommand { get; set; }
+        public RelayCommand<object> AddTocCommand { get; set; }
 
         public string CurrentToc { get; set; }
 
-        public MainWindowViewModel(MainModel model, IDialogService tocDialog, IDialogService generatingDialog)
+        public MainWindowViewModel(MainModel model, IDialogService tocDialog, IDialogService generatingDialog, IDialogService addtocDialog)
         {
             this.model = model;
             this.tocDialog = tocDialog;
             this.generatingDialog = generatingDialog;
-            CurrentToc = model.Settings.PerTocNlcList.First().Key;
+            this.addtocDialog = addtocDialog;
             Tocs = new ObservableCollection<string>(model.TocRepository.GetTocs());
             //ShowTocCommand = new RelayCommand<string>((toc) => {
             //    CurrentToc = toc;
@@ -37,19 +40,35 @@ namespace RjisFilter
             //    AllStations = new ObservableCollection<Station>(model.Idms.GetAllStations().Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
             //});
 
-            ShowTocCommand = new RelayCommand<string>((toc) => {
-                tocDialog.ShowDialog(model, toc);
+            ShowTocCommand = new RelayCommand<object>((owner) => {
+                tocDialog.ShowDialog(model, owner, CurrentToc);
             });
 
-            GenerateFilteredSetCommand = new RelayCommand<string>((toc) => {
-                if (!string.IsNullOrWhiteSpace(toc))
+            GenerateFilteredSetCommand = new RelayCommand<string>((owner) => {
+                if (!string.IsNullOrWhiteSpace(CurrentToc))
                 {
-                    model.GenerateFilteredSet(toc);
-                    generatingDialog.ShowDialog(model, toc);
+                    model.GenerateFilteredSet(CurrentToc);
+                    generatingDialog.ShowDialog(model, owner, CurrentToc);
                 }
             });
 
+            AddTocCommand = new RelayCommand<object>((owner) =>
+            {
+                addtocDialog.ShowDialog(model, owner, null);
+            });
+
             model.Rjis.PropertyChanged += Rjis_PropertyChanged;
+
+            var timer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(1),
+                IsEnabled = true
+            };
+            timer.Tick += (s, e) =>
+            {
+                System.Diagnostics.Debug.WriteLine($"current toc: {CurrentToc}");
+            };
+
         }
 
 

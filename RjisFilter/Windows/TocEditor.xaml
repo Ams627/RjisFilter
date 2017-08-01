@@ -25,7 +25,7 @@
                 <Button Margin="0,20,0,0" Content="&lt;-"/>
             </StackPanel>
             <DockPanel>
-                <TextBlock DockPanel.Dock="Top" Text="{Binding CurrentToc}" HorizontalAlignment="Center"/>
+                <TextBlock DockPanel.Dock="Top" Text="{Binding Toc}" HorizontalAlignment="Center" />
                 <DataGrid x:Name="TocGrid" DockPanel.Dock="Bottom" AutoGenerateColumns="False" HorizontalAlignment="Left" MinHeight="100" MinColumnWidth="100" Width="400" ItemsSource="{Binding TocStations}">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="NLC" Binding="{Binding Nlc}" Width="1*">

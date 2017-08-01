@@ -10,6 +10,7 @@ namespace RjisFilter
     {
         public NoTocsAdorner(UIElement adornedElement) : base (adornedElement)
         {
+            IsHitTestVisible = false;
         }
         protected override void OnRender(DrawingContext drawingContext)
         {
@@ -29,6 +30,10 @@ namespace RjisFilter
                 var startPoint = new Point(control.ActualWidth / 2 - ft.Width / 2, control.ActualHeight / 2 - ft.Height / 2);
 //                startPoint.Offset(adornedElementRect.Left, adornedElementRect.Top);
                 drawingContext.DrawText(ft, startPoint);
+            }
+            if (AdornedElement is ListView listview && listview.Items.Count > 0)
+            {
+                this.Visibility = Visibility.Hidden;
             }
         }
 

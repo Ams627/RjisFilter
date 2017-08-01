@@ -194,7 +194,9 @@ namespace RjisFilter.Model
                          }
                           ).ToDictionary(x => x.Set, x => x.List);
 
+
             globalTicketRepo = doc.Element("TocRepository").Elements("GlobalTicketTypes").Elements("TicketType").Select(x => x.Attribute("Code").Value).ToHashSet();
+            tocs = (from set in validStationSets select set.Attribute("Name")?.Value).ToHashSet();
             Console.WriteLine();
         }
 

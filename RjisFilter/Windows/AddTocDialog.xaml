@@ -1,0 +1,19 @@
+﻿<Window x:Class="RjisFilter.Windows.AddTocDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RjisFilter.Windows"
+        mc:Ignorable="d"
+        WindowStyle="None"
+        Title="AddTocDialog" Height="150" Width="300">
+    <Grid>
+        <StackPanel Margin="10,10,10,0">
+            <TextBlock Text="Enter a TOC (Train Operating Company) name or"/>
+            <TextBlock Text="a comma or space separated list of TOCs to add."/>
+            <TextBlock Text="e.g. 'Northern':"/>
+            <TextBox MinWidth="200" Text="{Binding TocsToAdd}"/>
+            <Button Margin="0,20,0,0" HorizontalAlignment="Center" Content="OK" MinWidth="60" Command="{Binding OkCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type Window}}}"/>
+        </StackPanel>
+    </Grid>
+</Window>

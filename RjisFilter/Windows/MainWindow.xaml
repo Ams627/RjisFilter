@@ -3,12 +3,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:i="clr-namespace:System.Windows.Interactivity;assembly=System.Windows.Interactivity"
         xmlns:local="clr-namespace:RjisFilter"
         mc:Ignorable="d"
         Title="RJIS Filter" Height="350" Width="525">
     <Grid>
         <StackPanel Margin="10,0,10,0">
-            <ListView x:Name="TocListView" Margin="0,10,0,10" ItemsSource="{Binding Tocs}" SelectedIndex="0" MinHeight="30">
+            <ListView x:Name="TocListView" Margin="0,10,0,10" ItemsSource="{Binding Tocs}" SelectedIndex="0" SelectedItem="{Binding CurrentToc,Mode=OneWayToSource}" MinHeight="30">
                 <ListView.Resources>
                     <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="Red"/>
                 </ListView.Resources>
@@ -22,7 +23,7 @@
                                 <MouseBinding
                                     Gesture="LeftDoubleClick"
                                     Command="{Binding DataContext.ShowTocCommand, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}"
-                                    CommandParameter="{Binding .}"
+                                    CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
                                     />
                             </TextBlock.InputBindings>
                         </TextBlock>
@@ -33,21 +34,32 @@
                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                     </Style>
                 </ListView.ItemContainerStyle>
+                <ListView.InputBindings>
+                    <MouseBinding
+                                    Gesture="LeftDoubleClick"
+                                    Command="{Binding AddTocCommand}"
+                                    />
+                </ListView.InputBindings>
 
             </ListView>
             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                <Button Content="Edit Tocs" HorizontalAlignment="Left"/>
-                <Button Margin="10,0,0,0" Content="Clusters and Groups..." />
+                <Button Content="Add Toc" HorizontalAlignment="Left"/>
+                <Button Content="Edit Toc" HorizontalAlignment="Left"/>
             </StackPanel>
             <CheckBox Content="Remove out of date records" HorizontalAlignment="Left"/>
             <CheckBox Content="Remove unused clusters" HorizontalAlignment="Left"/>
-            <Button Margin="0,10,0,0" HorizontalAlignment="Center"
+            <Button Margin="0,10,0,0" HorizontalAlignment="Center" MinWidth="200"
                     Content="Produced Filtered RJIS Set"
                     Command="{Binding GenerateFilteredSetCommand}"
                     CommandParameter="{Binding ElementName=TocListView, Path=SelectedItem}"
                     />
-            <Button Margin="0,10,0,0" HorizontalAlignment="Center"
+            <Button Margin="0,10,0,0" HorizontalAlignment="Center" MinWidth="200"
                     Content="Produced TLVs (PROD_FFL etc)"
+                    Command="{Binding GenerateTLVCommand}"
+                    CommandParameter="{Binding ElementName=TocListView, Path=SelectedItem}"
+                    />
+            <Button Margin="0,10,0,0" HorizontalAlignment="Center" MinWidth="200"
+                    Content="Station Info (Clusters etc)"
                     Command="{Binding GenerateTLVCommand}"
                     CommandParameter="{Binding ElementName=TocListView, Path=SelectedItem}"
                     />

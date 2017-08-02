@@ -21,6 +21,7 @@ namespace RjisFilter
         public ObservableCollection<string> Tocs { get; set; }
 
         public RelayCommand<object> ShowTocCommand { get; set; }
+        public RelayCommand<object> DeleteTocCommand { get; set; }
         public RelayCommand<string> GenerateFilteredSetCommand { get; set; }
         public RelayCommand<string> GenerateTLVCommand { get; set; }
         public RelayCommand<object> AddTocCommand { get; set; }
@@ -57,16 +58,20 @@ namespace RjisFilter
                 addtocDialog.ShowDialog(model, owner, null);
             });
 
-            model.Rjis.PropertyChanged += Rjis_PropertyChanged;
+            DeleteTocCommand = new RelayCommand<object>((owner) =>
+            {
+                addtocDialog.ShowDialog(model, owner, null);
+            });
 
-            var timer = new DispatcherTimer
+
+            model.Rjis.PropertyChanged += Rjis_PropertyChanged;
+            model.TocRepository.PropertyChanged += (s, e) =>
             {
-                Interval = TimeSpan.FromSeconds(1),
-                IsEnabled = true
-            };
-            timer.Tick += (s, e) =>
-            {
-                System.Diagnostics.Debug.WriteLine($"current toc: {CurrentToc}");
+                Tocs.Clear();
+                foreach (var toc in model.TocRepository.GetTocs())
+                {
+                    Tocs.Add(toc);
+                }
             };
 
         }

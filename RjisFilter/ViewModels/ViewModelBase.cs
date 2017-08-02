@@ -1,8 +1,9 @@
 ﻿using System.Windows;
+using MvvmFoundation.Wpf;
 
 namespace RjisFilter.ViewModels
 {
-    class ViewModelBase : DependencyObject
+    public class ViewModelBase : DependencyObject
     {
         public object Parameter { get; set; }
     }

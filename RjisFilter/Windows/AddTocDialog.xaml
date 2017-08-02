@@ -10,10 +10,26 @@
     <Grid>
         <StackPanel Margin="10,10,10,0">
             <TextBlock Text="Enter a TOC (Train Operating Company) name or"/>
-            <TextBlock Text="a comma or space separated list of TOCs to add."/>
+            <TextBlock Text="a comma separated list of TOCs to add."/>
             <TextBlock Text="e.g. 'Northern':"/>
-            <TextBox MinWidth="200" Text="{Binding TocsToAdd}"/>
-            <Button Margin="0,20,0,0" HorizontalAlignment="Center" Content="OK" MinWidth="60" Command="{Binding OkCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type Window}}}"/>
+            <TextBox TabIndex="0" x:Name="text" MinWidth="200" Text="{Binding TocsToAdd, Mode=OneWayToSource, UpdateSourceTrigger=PropertyChanged}"/>
+            <TextBlock x:Name="text2" MinWidth="200" Text="Invalid characters entered" Background="LightYellow">
+                <TextBlock.Style>
+                    <Style TargetType="{x:Type TextBlock}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsTocEnteredInvalid}" Value="true">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+
+            <Button Margin="0,20,0,0" HorizontalAlignment="Center" IsDefault="True"
+                    Content="OK" MinWidth="60"
+                    Command="{Binding OkCommand}"
+                    CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type Window}}}"/>
         </StackPanel>
     </Grid>
 </Window>

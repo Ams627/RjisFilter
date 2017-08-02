@@ -25,6 +25,11 @@
                                     Command="{Binding DataContext.ShowTocCommand, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}"
                                     CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
                                     />
+                                <KeyBinding Key="Delete"
+                                    Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}"
+                                    CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                                            />
+
                             </TextBlock.InputBindings>
                         </TextBlock>
                     </DataTemplate>
@@ -43,8 +48,8 @@
 
             </ListView>
             <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                <Button Content="Add Toc" HorizontalAlignment="Left"/>
-                <Button Content="Edit Toc" HorizontalAlignment="Left"/>
+                <Button Content="Add Toc" HorizontalAlignment="Left" MinWidth="100" Command="{Binding AddTocCommand}" />
+                <Button Margin="10,0,0,0"  Content="Edit Toc" HorizontalAlignment="Left" MinWidth="100" Command="{Binding ShowTocCommand}"  CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type Window}}}" />
             </StackPanel>
             <CheckBox Content="Remove out of date records" HorizontalAlignment="Left"/>
             <CheckBox Content="Remove unused clusters" HorizontalAlignment="Left"/>

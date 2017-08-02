@@ -73,7 +73,9 @@
     </ApplicationDefinition>
     <Compile Include="ActualDialog.cs" />
     <Compile Include="ConverterBase.cs" />
+    <Compile Include="DialogManager.cs" />
     <Compile Include="DictUtils.cs" />
+    <Compile Include="IViewModelCreator.cs" />
     <Compile Include="Model\CallingPoint.cs" />
     <Compile Include="Model\CallingType.cs" />
     <Compile Include="Model\Tlv\FflFare.cs" />

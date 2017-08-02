@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -13,7 +14,7 @@ using System.Xml.Linq;
 
 namespace RjisFilter.Model
 {
-    public class TocRepository
+    public class TocRepository : INotifyPropertyChanged
     {
         /// <summary>
         /// milliseconds after which to autosave:
@@ -29,6 +30,9 @@ namespace RjisFilter.Model
         private Dictionary<string, HashSet<string>> ticketRepo;
         private Dictionary<string, HashSet<string>> stationRepo;
         private Dictionary<string, HashSet<string>> routeRepo;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
         private List<string> Warnings { get; set; }
 
         public bool Saving
@@ -203,8 +207,20 @@ namespace RjisFilter.Model
         public void AddToc(string newToc)
         {
             tocs.Add(newToc);
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("tocs"));
             isDirty = true;
         }
+
+        public void AddTocRange(IEnumerable<string> toclist)
+        {
+            foreach (var toc in toclist)
+            {
+                tocs.Add(toc);
+            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("tocs"));
+            isDirty = true;
+        }
+
 
         public void DeleteToc(string existingToc)
         {

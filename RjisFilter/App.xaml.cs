@@ -8,13 +8,14 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using RjisFilter.ViewModels;
+using RjisFilter.Model;
 
 namespace RjisFilter
 {
     public partial class App : Application
     {
         private Settings settings;
-        private Idms idms;
         /// <summary>
         /// for ShowWindow win32 API function
         /// </summary>
@@ -39,10 +40,28 @@ namespace RjisFilter
 
             settings = new Settings();
             var idms = new Idms(settings);
+            while (!idms.Ready)
+            {
+                Thread.Sleep(10);
+            }
             var rjis = new RJIS(settings);
+            var timetable = new Timetable(settings, idms);
+            try
+            {
+                var model = new MainModel(settings, rjis, idms, timetable, new RouteingGuide());
 
-            var window = new MainWindow(settings, idms, rjis);
-            window.Show();
+                var tocdialog = new ActualDialog<TocEditor, PerTocViewModel>((a,b)=>new PerTocViewModel(a, b));
+
+                var generating = new ActualDialog<Windows.Generating, ViewModels.GeneratingViewModel>((a, b) => new GeneratingViewModel(a, b));
+
+                var mainWindowViewModel = new MainWindowViewModel(model, tocdialog, generating);
+                var window = new MainWindow(mainWindowViewModel);
+                window.Show();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"{ex.ToString()}");
+            }
         }
 
 

@@ -1,10 +1,10 @@
 ﻿using System;
 
-namespace RjisFilter
+namespace RjisFilter.Model
 {
     public partial class RJIS
     {
-        class RJISTicketRecord
+        public class RJISTicketRecord
         {
             public string TicketCode { get; set; }
             public string RestrictionCode { get; set; }

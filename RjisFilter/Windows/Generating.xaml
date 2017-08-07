@@ -1,0 +1,28 @@
+﻿<Window x:Class="RjisFilter.Windows.Generating"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:RjisFilter.Windows"
+        xmlns:local2="clr-namespace:RjisFilter"
+        mc:Ignorable="d"
+        Title="Generating" Height="300" Width="300">
+    <Grid>
+        <StackPanel Margin="10">
+            <TextBlock>Generating filtered RJIS set</TextBlock>
+            <ProgressBar Height="20" Margin="10" Minimum="0" Maximum="100" Value="{Binding Completed}" />
+            <Button Content="Ok" Padding="5,0,5,0" HorizontalAlignment="Center" >
+                <Button.Style>
+                    <Style TargetType="Button">
+                        <Setter Property="IsEnabled" Value="False"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding Completed}" Value="100">
+                                <Setter Property="IsEnabled" Value="True"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Button.Style>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>

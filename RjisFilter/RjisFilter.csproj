@@ -15,7 +15,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <PlatformTarget>x64</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,6 +23,8 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -45,7 +47,7 @@
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.ValueTuple, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+      <HintPath>..\packages\TlvSerialise.1.0.1\lib\System.ValueTuple.dll</HintPath>
     </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
@@ -56,6 +58,9 @@
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
+    <Reference Include="TlvSerialise, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\TlvSerialise.1.0.1\lib\TlvSerialise.dll</HintPath>
+    </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -65,27 +70,52 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ActualDialog.cs" />
+    <Compile Include="ConverterBase.cs" />
     <Compile Include="DictUtils.cs" />
-    <Compile Include="Idms.cs" />
+    <Compile Include="Model\CallingPoint.cs" />
+    <Compile Include="Model\CallingType.cs" />
+    <Compile Include="Model\Tlv\FflFare.cs" />
+    <Compile Include="Model\Tlv\FflProduct.cs" />
+    <Compile Include="Model\Tlv\ProdFfl.cs" />
+    <Compile Include="ViewModels\GeneratingViewModel.cs" />
+    <Compile Include="IDialogService.cs" />
+    <Compile Include="Model\Idms.cs" />
     <Compile Include="LinqExtensions.cs" />
-    <Compile Include="Model.cs" />
-    <Compile Include="RJIS.cs" />
-    <Compile Include="RjisFlow.cs" />
-    <Compile Include="RJISFlowValue.cs" />
-    <Compile Include="RjisNDF.cs" />
-    <Compile Include="RJISStationInfo.cs" />
-    <Compile Include="RJISTicketRecord.cs" />
-    <Compile Include="RjisUtils.cs" />
-    <Compile Include="Settings.cs" />
+    <Compile Include="Model\RouteingGuide.cs" />
+    <Compile Include="Model\Timetable.cs" />
+    <Compile Include="ViewModels\MainWindowViewModel.cs" />
+    <Compile Include="Model\Model.cs" />
+    <Compile Include="OneStationDialog.xaml.cs">
+      <DependentUpon>OneStationDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="OneStationDialogHelper.cs" />
+    <Compile Include="ViewModels\OneStationViewModel.cs" />
+    <Compile Include="Model\RJIS.cs" />
+    <Compile Include="Model\RjisFlow.cs" />
+    <Compile Include="Model\RJISFlowValue.cs" />
+    <Compile Include="Model\RjisNDF.cs" />
+    <Compile Include="Model\RJISStationInfo.cs" />
+    <Compile Include="Model\RJISTicketRecord.cs" />
+    <Compile Include="Model\RjisUtils.cs" />
+    <Compile Include="Model\Settings.cs" />
     <Compile Include="StationInfo.xaml.cs">
       <DependentUpon>StationInfo.xaml</DependentUpon>
     </Compile>
-    <Compile Include="StationInfoViewModel.cs" />
-    <Compile Include="TocEditor.xaml.cs">
+    <Compile Include="ViewModels\PerTocViewModel.cs" />
+    <Compile Include="ViewModels\StationInfoViewModel.cs" />
+    <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Compile Include="Windows\Generating.xaml.cs">
+      <DependentUpon>Generating.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\TocEditor.xaml.cs">
       <DependentUpon>TocEditor.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ViewModel.cs" />
-    <Page Include="MainWindow.xaml">
+    <Page Include="Windows\Generating.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -93,15 +123,19 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="MainWindow.xaml.cs">
+    <Compile Include="Windows\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="OneStationDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="StationInfo.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="TocEditor.xaml">
+    <Page Include="Windows\TocEditor.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

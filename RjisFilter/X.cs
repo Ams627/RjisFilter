@@ -1,0 +1,7 @@
+﻿namespace RjisFilter
+{
+    class X
+    {
+
+    }
+}

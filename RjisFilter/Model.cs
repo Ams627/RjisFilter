@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace RjisFilter
 {
+
     class Model
     {
         //private Settings settings;

@@ -49,13 +49,16 @@ namespace RjisFilter
             var timetable = new Timetable(settings, idms);
             try
             {
+                var dialogFactory = new Factory<IMyDialog>();
+                var viewModelFactory = new Factory<ViewModelBase>();
+
                 var model = new MainModel(settings, tocRepository, rjis, idms, timetable, new RouteingGuide());
 
                 var tocdialog = new ActualDialog<TocEditor, PerTocViewModel>((a,b)=>new PerTocViewModel(a, b));
                 var addtocDialog = new ActualDialog<Windows.AddTocDialog, AddTocViewModel>((a, b) => new AddTocViewModel(a, b));
                 var generating = new ActualDialog<Windows.Generating, ViewModels.GeneratingViewModel>((a, b) => new GeneratingViewModel(a, b));
 
-                var mainWindowViewModel = new MainWindowViewModel(model, tocdialog, generating, addtocDialog);
+                var mainWindowViewModel = new MainWindowViewModel(model, tocdialog, generating, addtocDialog, deleteTocDialog);
                 var window = new MainWindow(mainWindowViewModel);
                 window.Show();
             }

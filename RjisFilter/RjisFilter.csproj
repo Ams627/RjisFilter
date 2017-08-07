@@ -75,6 +75,10 @@
     <Compile Include="ConverterBase.cs" />
     <Compile Include="DialogManager.cs" />
     <Compile Include="DictUtils.cs" />
+    <Compile Include="Factory.cs" />
+    <Compile Include="Factory2.cs" />
+    <Compile Include="FactoryAttribute.cs" />
+    <Compile Include="IMyDialog.cs" />
     <Compile Include="IViewModelCreator.cs" />
     <Compile Include="Model\CallingPoint.cs" />
     <Compile Include="Model\CallingType.cs" />
@@ -84,6 +88,7 @@
     <Compile Include="Model\TocRepository.cs" />
     <Compile Include="Model\User32Interop.cs" />
     <Compile Include="ViewModels\AddTocViewModel.cs" />
+    <Compile Include="ViewModels\DialogHelper.cs" />
     <Compile Include="ViewModels\GeneratingViewModel.cs" />
     <Compile Include="IDialogService.cs" />
     <Compile Include="Model\Idms.cs" />

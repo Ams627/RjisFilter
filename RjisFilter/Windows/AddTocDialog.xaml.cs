@@ -14,9 +14,7 @@ using System.Windows.Shapes;
 
 namespace RjisFilter.Windows
 {
-    /// <summary>
-    /// Interaction logic for AddTocDialog.xaml
-    /// </summary>
+    [Factory("AddTocDialog")]
     public partial class AddTocDialog : Window
     {
         public AddTocDialog()

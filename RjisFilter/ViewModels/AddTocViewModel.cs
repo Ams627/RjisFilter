@@ -10,6 +10,7 @@ using System.Threading;
 
 namespace RjisFilter.ViewModels
 {
+    [Factory("AddTocVM")]
     class AddTocViewModel : ViewModelBase
     {
         private MainModel model;

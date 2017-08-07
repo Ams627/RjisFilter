@@ -14,15 +14,16 @@ using System.Windows.Shapes;
 
 namespace RjisFilter
 {
-    /// <summary>
-    /// Interaction logic for TocEditor.xaml
-    /// </summary>
-    public partial class TocEditor : Window
+    [Factory("TocEditor")]
+    public partial class TocEditor : Window, IMyDialog
     {
+        private Window owner;
         Point? _startPoint = null;
         public bool IsDragging { get; set; }
-        public TocEditor()
+        public TocEditor(Model.MainModel model, Window owner)
         {
+            this.owner = owner;
+//            this.DataContext = new ViewModels.AddTocViewModel();
             InitializeComponent();
 
             allStationsGrid.PreviewMouseDown += (s, e) =>
@@ -58,5 +59,11 @@ namespace RjisFilter
             System.Diagnostics.Debug.WriteLine("Drag");
         }
 
+        public void Show(Window parent, object dataContext)
+        {
+            this.Owner = parent;
+            this.DataContext = dataContext;
+            ShowDialog();
+        }
     }
 }

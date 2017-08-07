@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using MvvmFoundation.Wpf;
 using System.Windows;
 using RjisFilter.Model;
+using RjisFilter.ViewModels;
+
 using System.Windows.Threading;
 
 namespace RjisFilter
@@ -17,6 +19,7 @@ namespace RjisFilter
         private readonly IDialogService tocDialog;
         private readonly IDialogService generatingDialog;
         private readonly IDialogService addtocDialog;
+        private readonly IDialogService deleteTocDialog;
 
         public ObservableCollection<string> Tocs { get; set; }
 
@@ -28,12 +31,14 @@ namespace RjisFilter
 
         public string CurrentToc { get; set; }
 
-        public MainWindowViewModel(MainModel model, IDialogService tocDialog, IDialogService generatingDialog, IDialogService addtocDialog)
+        public MainWindowViewModel(MainModel model, IDialogService tocDialog, IDialogService generatingDialog, IDialogService addtocDialog, IDialogService deleteTocDialog)
         {
             this.model = model;
             this.tocDialog = tocDialog;
             this.generatingDialog = generatingDialog;
             this.addtocDialog = addtocDialog;
+            this.deleteTocDialog = deleteTocDialog;
+
             Tocs = new ObservableCollection<string>(model.TocRepository.GetTocs());
             //ShowTocCommand = new RelayCommand<string>((toc) => {
             //    CurrentToc = toc;

@@ -5,6 +5,6 @@ namespace RjisFilter
 {
     public interface IDialogService
     {
-        void ShowDialog(MainModel model, object owner, object parameter);
+        void ShowDialog(MainModel model, object owner, object viewModel);
     }
 }

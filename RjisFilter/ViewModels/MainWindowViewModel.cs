@@ -16,10 +16,7 @@ namespace RjisFilter
     public class MainWindowViewModel : DependencyObject
     {
         private readonly MainModel model;
-        private readonly IDialogService tocDialog;
-        private readonly IDialogService generatingDialog;
-        private readonly IDialogService addtocDialog;
-        private readonly IDialogService deleteTocDialog;
+        private readonly IDialogService dialogService;
 
         public ObservableCollection<string> Tocs { get; set; }
 
@@ -31,13 +28,10 @@ namespace RjisFilter
 
         public string CurrentToc { get; set; }
 
-        public MainWindowViewModel(MainModel model, IDialogService tocDialog, IDialogService generatingDialog, IDialogService addtocDialog, IDialogService deleteTocDialog)
+        public MainWindowViewModel(MainModel model, IDialogService dialogService)
         {
             this.model = model;
-            this.tocDialog = tocDialog;
-            this.generatingDialog = generatingDialog;
-            this.addtocDialog = addtocDialog;
-            this.deleteTocDialog = deleteTocDialog;
+            this.dialogService = dialogService;
 
             Tocs = new ObservableCollection<string>(model.TocRepository.GetTocs());
             //ShowTocCommand = new RelayCommand<string>((toc) => {
@@ -47,27 +41,30 @@ namespace RjisFilter
             //});
 
             ShowTocCommand = new RelayCommand<object>((owner) => {
-                tocDialog.ShowDialog(model, owner, CurrentToc);
+                var viewModel = new ViewModels.PerTocViewModel(model, null);
+                dialogService.ShowDialog(model, owner, viewModel);
             });
 
             GenerateFilteredSetCommand = new RelayCommand<string>((owner) => {
                 if (!string.IsNullOrWhiteSpace(CurrentToc))
                 {
                     model.GenerateFilteredSet(CurrentToc);
-                    generatingDialog.ShowDialog(model, owner, CurrentToc);
+                    var viewModel = new ViewModels.GeneratingViewModel(model, null);
+                    dialogService.ShowDialog(model, owner, viewModel);
                 }
             });
 
             AddTocCommand = new RelayCommand<object>((owner) =>
             {
-                addtocDialog.ShowDialog(model, owner, null);
+                var viewmodel = new AddTocViewModel(model, null);
+                dialogService.ShowDialog(model, owner, viewmodel);
             });
 
             DeleteTocCommand = new RelayCommand<object>((owner) =>
             {
-                addtocDialog.ShowDialog(model, owner, null);
+                var viewmodel = new DeleteTocViewModel(model, CurrentToc);
+                dialogService.ShowDialog(model, owner, viewmodel);
             });
-
 
             model.Rjis.PropertyChanged += Rjis_PropertyChanged;
             model.TocRepository.PropertyChanged += (s, e) =>

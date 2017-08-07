@@ -10,17 +10,23 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace RjisFilter.Windows
+namespace RjisFilter.UserControls
 {
-    [Factory("AddTocDialog")]
-    public partial class AddTocDialog : Window
+    /// <summary>
+    /// Interaction logic for UserControl1.xaml
+    /// </summary>
+    public partial class AddTocDialog : UserControl
     {
         public AddTocDialog()
         {
             InitializeComponent();
-            Loaded += (sender, e) => MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+            Loaded += (sender, e) =>
+            {
+                MoveFocus(new TraversalRequest(FocusNavigationDirection.Next));
+            };
             KeyDown += (s, e) =>
             {
                 if (e.Key == Key.Escape)
@@ -28,7 +34,8 @@ namespace RjisFilter.Windows
                     System.Diagnostics.Debug.WriteLine("Esc");
                     if (text.Text.Length == 0)
                     {
-                        Close();
+                        Window w = Window.GetWindow(this);
+                        w.Close();
                     }
                     else
                     {
@@ -36,6 +43,7 @@ namespace RjisFilter.Windows
                     }
                 }
             };
+
         }
     }
 }

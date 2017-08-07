@@ -25,11 +25,6 @@
                                     Command="{Binding DataContext.ShowTocCommand, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}"
                                     CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
                                     />
-                                <KeyBinding Key="Delete"
-                                    Command="{Binding DataContext.DeleteCommand, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}"
-                                    CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
-                                            />
-
                             </TextBlock.InputBindings>
                         </TextBlock>
                     </DataTemplate>
@@ -44,6 +39,10 @@
                                     Gesture="LeftDoubleClick"
                                     Command="{Binding AddTocCommand}"
                                     />
+
+                    <KeyBinding Key="Delete"
+                                    Command="{Binding DeleteTocCommand}"
+                                    CommandParameter="{Binding RelativeSource={RelativeSource AncestorType={x:Type Window}}}"/>
                 </ListView.InputBindings>
 
             </ListView>

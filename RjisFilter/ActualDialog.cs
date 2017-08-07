@@ -4,24 +4,16 @@ using RjisFilter.Model;
 
 namespace RjisFilter
 {
-    class ActualDialog<W, VM> : IDialogService where W : Window, new() where VM : ViewModels.ViewModelBase
+    public class ActualDialog : IDialogService
     {
-        Func<MainModel, object, VM> generator;
-        public ActualDialog(Func<MainModel, object, VM> generator)
+        public void ShowDialog(MainModel model, object owner, object viewModel)
         {
-            this.generator = generator;
-        }
-
-        public void ShowDialog(MainModel model, object owner, object parameter)
-        {
-            var vm = generator(model, parameter);
-            var window = new W()
+            var window = new Windows.DialogContainer()
             {
-                DataContext = vm,
-                Owner = owner as Window
+                Owner = owner as Window,
+                DataContext = viewModel
             };
             window.ShowDialog();
         }
-       
     }
 }

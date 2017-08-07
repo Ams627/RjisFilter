@@ -87,7 +87,14 @@
     <Compile Include="Model\Tlv\ProdFfl.cs" />
     <Compile Include="Model\TocRepository.cs" />
     <Compile Include="Model\User32Interop.cs" />
+    <Compile Include="UserControls\AddTocDialog.xaml.cs">
+      <DependentUpon>AddTocDialog.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="UserControls\DeleteTocDialog.xaml.cs">
+      <DependentUpon>DeleteTocDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ViewModels\AddTocViewModel.cs" />
+    <Compile Include="ViewModels\DeleteTocViewModel.cs" />
     <Compile Include="ViewModels\DialogHelper.cs" />
     <Compile Include="ViewModels\GeneratingViewModel.cs" />
     <Compile Include="IDialogService.cs" />
@@ -116,21 +123,36 @@
     <Compile Include="ViewModels\PerTocViewModel.cs" />
     <Compile Include="ViewModels\StationInfoViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
-    <Compile Include="Windows\AddTocDialog.xaml.cs">
+    <Compile Include="Dialogs\AddTocDialog.xaml.cs">
       <DependentUpon>AddTocDialog.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Windows\Generating.xaml.cs">
+    <Compile Include="Dialogs\DialogContainer.xaml.cs">
+      <DependentUpon>DialogContainer.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\Generating.xaml.cs">
       <DependentUpon>Generating.xaml</DependentUpon>
     </Compile>
     <Compile Include="Windows\NoTocsAdorner.cs" />
-    <Compile Include="Windows\TocEditor.xaml.cs">
+    <Compile Include="Dialogs\TocEditor.xaml.cs">
       <DependentUpon>TocEditor.xaml</DependentUpon>
     </Compile>
-    <Page Include="Windows\AddTocDialog.xaml">
+    <Page Include="UserControls\AddTocDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Windows\Generating.xaml">
+    <Page Include="Dialogs\AddTocDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Dialogs\DialogContainer.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Dialogs\Generating.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControls\DeleteTocDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -154,7 +176,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Windows\TocEditor.xaml">
+    <Page Include="Dialogs\TocEditor.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -190,6 +212,7 @@
   <ItemGroup>
     <Resource Include="Images\explorer.png" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

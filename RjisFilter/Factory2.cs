@@ -8,51 +8,51 @@ namespace RjisFilter
 {
     public class Factory2<I> where I : class
     {
-        static Factory2()
-        {
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            var types = assembly.GetTypes()
-                        .Where(t => t.IsClass
-                               && t.GetCustomAttribute<FactoryAttribute>() != null
-                               && typeof(I).IsAssignableFrom(t));
+        //static Factory2()
+        //{
+        //    Assembly assembly = Assembly.GetExecutingAssembly();
+        //    var types = assembly.GetTypes()
+        //                .Where(t => t.IsClass
+        //                       && t.GetCustomAttribute<FactoryAttribute>() != null
+        //                       && typeof(I).IsAssignableFrom(t));
 
-            //foreach (var type in types)
-            //{
-            //    var att = type.GetCustomAttribute<FactoryAttribute>();
-            //    typeMap.Add(att.Designator, type);
-            //}
-        }
+        //    //foreach (var type in types)
+        //    //{
+        //    //    var att = type.GetCustomAttribute<FactoryAttribute>();
+        //    //    typeMap.Add(att.Designator, type);
+        //    //}
+        //}
 
-        public I Create(string name)
-        {
-            typeMap.TryGetValue(name, out var type);
-            if (type == null)
-            {
-                throw new Exception($"Factory cannot create type of for type designator {name}.");
-            }
-            var result = Activator.CreateInstance(type);
-            return result as I;
-        }
+        //public I Create(string name)
+        //{
+        //    typeMap.TryGetValue(name, out var type);
+        //    if (type == null)
+        //    {
+        //        throw new Exception($"Factory cannot create type of for type designator {name}.");
+        //    }
+        //    var result = Activator.CreateInstance(type);
+        //    return result as I;
+        //}
 
-        public I Create(string name, object param1)
-        {
-            typeMap.TryGetValue(name, out var type);
-            if (type == null)
-            {
-                throw new Exception($"Factory cannot create type of for type designator {name}.");
-            }
-            var result = Activator.CreateInstance(type, param1);
-            return result as I;
-        }
-        public I Create(string name, object param1, object param2)
-        {
-            typeMap.TryGetValue(name, out var type);
-            if (type == null)
-            {
-                throw new Exception($"Factory cannot create type of for type designator {name}.");
-            }
-            var result = Activator.CreateInstance(type, param1, param2);
-            return result as I;
-        }
+        //public I Create(string name, object param1)
+        //{
+        //    typeMap.TryGetValue(name, out var type);
+        //    if (type == null)
+        //    {
+        //        throw new Exception($"Factory cannot create type of for type designator {name}.");
+        //    }
+        //    var result = Activator.CreateInstance(type, param1);
+        //    return result as I;
+        //}
+        //public I Create(string name, object param1, object param2)
+        //{
+        //    typeMap.TryGetValue(name, out var type);
+        //    if (type == null)
+        //    {
+        //        throw new Exception($"Factory cannot create type of for type designator {name}.");
+        //    }
+        //    var result = Activator.CreateInstance(type, param1, param2);
+        //    return result as I;
+        //}
     }
 }

@@ -10,8 +10,7 @@ using System.Threading;
 
 namespace RjisFilter.ViewModels
 {
-    [Factory("AddTocVM")]
-    class AddTocViewModel : ViewModelBase
+    public class AddTocViewModel : ViewModelBase
     {
         private MainModel model;
         public RelayCommand<object> OkCommand { get; set; }
@@ -32,15 +31,18 @@ namespace RjisFilter.ViewModels
             this.model = model;
             OkCommand = new RelayCommand<object>((w) =>
             {
-                var alltocs = TocsToAdd.Split(',').Select(x=>x.Trim());
-                if (alltocs != null && alltocs.Any(x => x.IndexOfAny("&<>:;\"\t".ToCharArray()) != -1))
+                if (!string.IsNullOrWhiteSpace(TocsToAdd))
                 {
-                    IsTocEnteredInvalid = true; Task.Run(() => Thread.Sleep(2000)).ContinueWith(x=>Dispatcher.Invoke(()=>IsTocEnteredInvalid = false));
-                }
-                else if (w is Window window)
-                {
-                    model.TocRepository.AddTocRange(alltocs);
-                    window.Close();
+                    var alltocs = TocsToAdd.Split(',').Select(x => x.Trim());
+                    if (alltocs != null && alltocs.Any(x => x.IndexOfAny("&<>:;\"\t".ToCharArray()) != -1))
+                    {
+                        IsTocEnteredInvalid = true; Task.Run(() => Thread.Sleep(2000)).ContinueWith(x => Dispatcher.Invoke(() => IsTocEnteredInvalid = false));
+                    }
+                    else if (w is Window window)
+                    {
+                        model.TocRepository.AddTocRange(alltocs);
+                        window.Close();
+                    }
                 }
             });
         }

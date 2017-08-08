@@ -164,7 +164,7 @@ namespace RjisFilter.Model
                 }
             }
 
-            LoadTocsFile();
+            //LoadTocsFile();
 
             var (ok, logFolder) = GetFolder("log");
             if (!ok)
@@ -226,7 +226,7 @@ namespace RjisFilter.Model
 
             var validStationSets = tocDoc.Element("TocSettings").Elements("StationSets").Elements("StationSet").Where(x => x.Attribute("Name") != null);
 
-            PerTocNlcList = validStationSets.ToDictionary(x => x.Attribute("Name").Value, x => x.Elements("Station")?.Elements("Station").Where(e => e.Attribute("Nlc") != null).Select(e => e.Attribute("Nlc").Value).ToSortedSet(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
+            PerTocNlcList = validStationSets.ToDictionary(x => x.Attribute("Name").Value, x => x.Element("Stations")?.Elements("Station").Where(e => e.Attribute("Nlc") != null).Select(e => e.Attribute("Nlc").Value).ToSortedSet(StringComparer.OrdinalIgnoreCase), StringComparer.OrdinalIgnoreCase);
 
             PerTocTicketTypeList = validStationSets.ToDictionary(
                 x => x.Attribute("Name").Value,

@@ -68,7 +68,7 @@ namespace RjisFilter.Model
             // create the program folder if it does not exist. We should never need to do this but we will do
             // it as an emergency procedure:
             Directory.CreateDirectory(programFolder);
-            filename = Path.Combine(programFolder, "tocs2.xml");
+            filename = Path.Combine(programFolder, "tocs.xml");
             Load();
 
             if (autosave)
@@ -175,12 +175,12 @@ namespace RjisFilter.Model
                 throw new Exception($"Invalid route code {element.Value} specified at line {li.LineNumber} in file {filename}.");
             }
 
-            var validStationSets = doc.Element("TocRepository").Elements("StationSets").Elements("StationSet").Where(x => x.Attribute("Name") != null);
-            stationRepo = (from set in validStationSets
+            var validStationSets = doc.Element("TocRepository")?.Element("StationSets").Elements("StationSet").Where(x => x.Attribute("Name") != null);
+            stationRepo = (from set in validStationSets 
                            select new
                            {
                                SetName = set.Attribute("Name").Value,
-                               HashSet = (from station in set.Elements("Station") select station.Attribute("Nlc").Value).ToHashSet()
+                               HashSet = (from station in set.Elements("Stations").Elements("Station") select station.Attribute("Nlc").Value).ToHashSet()
                            }
                           ).ToDictionary(x => x.SetName, x => x.HashSet);
             ticketRepo = (from set in validStationSets

@@ -13,7 +13,7 @@ namespace RjisFilter.ViewModels
     /// a ticket type list and a station list for the TOC. The ticket type list is read from the
     /// settings file. 
     /// </summary>
-    class PerTocViewModel : ViewModelBase
+    class TocEditorViewModel : ViewModelBase
     {
         public class Station
         {
@@ -27,11 +27,11 @@ namespace RjisFilter.ViewModels
         public ObservableCollection<Station> AllStations { get; set; }
 
         private readonly MainModel model;
-        public PerTocViewModel(MainModel model, object param)
+        public TocEditorViewModel(MainModel model, object param)
         {
             this.model = model;
             Toc = param as string;
-            TocStations = new ObservableCollection<Station>(model.Settings.PerTocNlcList[Toc].Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
+            TocStations = new ObservableCollection<Station>(model.TocRepository.GetStations(Toc).Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
             AllStations = new ObservableCollection<Station>(model.Idms.GetAllStations().Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
         }
     }

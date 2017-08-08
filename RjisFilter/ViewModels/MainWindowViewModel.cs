@@ -34,14 +34,9 @@ namespace RjisFilter
             this.dialogService = dialogService;
 
             Tocs = new ObservableCollection<string>(model.TocRepository.GetTocs());
-            //ShowTocCommand = new RelayCommand<string>((toc) => {
-            //    CurrentToc = toc;
-            //    TocStations = new ObservableCollection<Station>(model.Settings.PerTocNlcList[toc].Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
-            //    AllStations = new ObservableCollection<Station>(model.Idms.GetAllStations().Select(x => new Station { Nlc = x, Crs = model.Idms.GetCrsFromNlc(x), Name = model.Idms.GetNameFromNlc(x) }));
-            //});
 
             ShowTocCommand = new RelayCommand<object>((owner) => {
-                var viewModel = new ViewModels.PerTocViewModel(model, null);
+                var viewModel = new ViewModels.TocEditorViewModel(model, CurrentToc);
                 dialogService.ShowDialog(model, owner, viewModel);
             });
 

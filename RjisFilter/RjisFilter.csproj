@@ -93,6 +93,9 @@
     <Compile Include="UserControls\DeleteTocDialog.xaml.cs">
       <DependentUpon>DeleteTocDialog.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UserControls\TocEditorDialog.xaml.cs">
+      <DependentUpon>TocEditorDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ViewModels\AddTocViewModel.cs" />
     <Compile Include="ViewModels\DeleteTocViewModel.cs" />
     <Compile Include="ViewModels\DialogHelper.cs" />
@@ -120,8 +123,8 @@
     <Compile Include="StationInfo.xaml.cs">
       <DependentUpon>StationInfo.xaml</DependentUpon>
     </Compile>
-    <Compile Include="ViewModels\PerTocViewModel.cs" />
     <Compile Include="ViewModels\StationInfoViewModel.cs" />
+    <Compile Include="ViewModels\TocEditorViewModel.cs" />
     <Compile Include="ViewModels\ViewModelBase.cs" />
     <Compile Include="Dialogs\AddTocDialog.xaml.cs">
       <DependentUpon>AddTocDialog.xaml</DependentUpon>
@@ -153,6 +156,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UserControls\DeleteTocDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControls\TocEditorDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

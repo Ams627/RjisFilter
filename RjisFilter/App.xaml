@@ -13,5 +13,8 @@
         <DataTemplate DataType="{x:Type vm:AddTocViewModel}">
             <uc:AddTocDialog/>
         </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:TocEditorViewModel}">
+            <uc:TocEditorDialog/>
+        </DataTemplate>
     </Application.Resources>
 </Application>
